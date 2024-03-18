@@ -1,1 +1,1 @@
-# ngc
+# NextGenControls simulator package
