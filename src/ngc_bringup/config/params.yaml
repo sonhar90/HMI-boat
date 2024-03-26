@@ -1,6 +1,5 @@
 ngc_sim:
   ros__parameters: # (data type) description
-
     #material and physichal parameters for "NTNU Arbeidsbaaten"
     roh: 1026.0      #(double) denstity of the water (kg/m³)
 
@@ -13,9 +12,9 @@ ngc_sim:
     draft: 0.9          #(double) draft from water line
 
     #inertia dyadics coefficient needed to compute Ig
-    R44: 1.4       #(double) radius of gyration in roll (~0.4 *B)
-    R55: 3.0        #(double) radius of gyration in pitch(~0.25*L)
-    R66: 3.0        #(double) radius of gyration in yaw (~0.25*L)
+    R44: 2.0        #(double) radius of gyration in roll
+    R55: 4.0        #(double) radius of gyration in pitch
+    R66: 2.0        #(double) radius of gyration in yaw
 
     #hydrostatic--> restoring coefficients/spring stifness - > resulting in the spring stiffnes matrix G
     A_wp: 2.0        #(double) waterplane area
@@ -23,19 +22,18 @@ ngc_sim:
     GML: 0.0         #(double) longtitudinal metacentric height
     LCF: 0.0         #(double) location of CF relative to CO
     r_p: 0.0         #(double) location of the pont CP relative to the CO
-        
-    #linear added mass terms derived by assuming the ship hull to be an elipsioid
-    Xudot: 2030.0 #  aka. A11 = 2.7 *roh *nabla^(5/3) /L²  -- the approximation function of Snöding (1982)
-    Yvdot: 16628.0    # 
-    Yrdot: 20000.0    # 
-    Zwdot: 16628.0    # 
-    Kpdot: 8361.0     # 1.7* m *R66² (from Fossen vehicle sim)
-    Mqdot: 83196.0    #
-    Nrdot: 84833.0    # -pi(T/L)² *[1/12 + 0,017 CB * B/T - 0,33 (B/L)]      (eq. 4.12)
+    
+    
+    #linear added mass terms
+    Xudot: 2580.0 # aka. A11 = 2.7 *roh *nabla^(5/3) /L²  -- the approximation function of Snöding (1982)
+    Yvdot: 0.0 
+    Zwdot: 0.0
+    Kpdot: 0.0
+    Mqdot: 0.0
+    Nrdot: 0.0
     
     #Linear damping terms
     Xu: 0.0         #(double) surge linear damping term 
-
     Xr: 1.0         #(double) damping element between surge and yaw
     Yv: 1.0         #(double) sway damping term
     Zw: 1.0         #(double) heave damping term
@@ -52,10 +50,8 @@ ngc_sim:
 
     #Nonlinear modeling considering the ship as a wing, Andrew Ross 2008: https://ntnuopen.ntnu.no/ntnu-xmlui/handle/11250/259440
     #XLD: eq. 4.76, p. 95
-
     Xuu: 130.0       #(double) surge second order damping term
     Xuuu: 0.0       #(double) surge cubic damping term
-
     #Xvv: 1.0
     Xurr: 1.0
     #Xrv: 1.0
@@ -63,9 +59,7 @@ ngc_sim:
     #Xrvu: 1.0       #(double) 
     #Xurr: 1.0
     Nuur: 1.0
-
     Nur: 1.0
-
     
     #modeling the changes in lift and drag with respect to roll see. chap 4.4
     #dXLD: eq. 4.74, p.94
