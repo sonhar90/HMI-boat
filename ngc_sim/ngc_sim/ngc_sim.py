@@ -19,6 +19,9 @@ class Simulator(Node):
         self.counter_ = 0
         self.eta = np.array([0,0,0,0,0,0], dtype= float)
         self.nu = np.array([0,0,0,0,0,0], dtype= float)
+
+        self.nu_dot  = np.array([0,0,0,0,0,0], dtype= float)
+
         self.eta_pub= self.create_publisher(Ned, "eta_sim", 1)
         self.nu_pub = self.create_publisher(Nu, "nu_sim", 1)
         self.nu_dot_pub = self.create_publisher(NuDot, "nu_dot_sim", 1)
@@ -53,6 +56,7 @@ class Simulator(Node):
             ('Kp', rclpy.Parameter.Type.DOUBLE),
             ('Mq', rclpy.Parameter.Type.DOUBLE),
             ('Nr', rclpy.Parameter.Type.DOUBLE),
+            ('Nur', rclpy.Parameter.Type.DOUBLE),
             ('Nuur', rclpy.Parameter.Type.DOUBLE),
             ('Xudot', rclpy.Parameter.Type.DOUBLE),
             ('Yvdot', rclpy.Parameter.Type.DOUBLE),
@@ -99,6 +103,9 @@ class Simulator(Node):
         self.Xuuu = self.get_parameter('Xuuu').get_parameter_value().double_value
         self.Xurr = self.get_parameter('Xurr').get_parameter_value().double_value
         self.Nuur = self.get_parameter('Nuur').get_parameter_value().double_value
+
+        self.Nur = self.get_parameter('Nur').get_parameter_value().double_value
+
         #linear added mass term 
         self.Xudot = self.get_parameter('Xudot').get_parameter_value().double_value
         self.Yvdot = self.get_parameter('Yvdot').get_parameter_value().double_value
@@ -130,6 +137,8 @@ class Simulator(Node):
     def integrator_callback(self):
         eta_message = Ned()
         nu_message = Nu()
+        nu_dot_message = NuDot()
+
         now= self.get_clock().now().to_msg() 
         if self.prev_timestamp is None:
             self.prev_timestamp = now # set the first timestep 
@@ -144,16 +153,23 @@ class Simulator(Node):
         tau_wind = np.array([0,0,0,0,0,0])
         tau_wave = np.array([0,0,0,0,0,0])
         #TODO vurder om self.eta og nu er intuitivt her, eller om dynamics bare tar det direkte fra classen
-        self.eta, self.nu = self.dynamics(eta=self.eta, nu=self.nu, tau_prop=tau_prop, tau_wind=tau_wind, tau_wave=tau_wave, dt = dt)
+
+        self.eta, self.nu , self.nu_dot= self.dynamics(eta=self.eta, nu=self.nu, tau_prop=tau_prop, tau_wind=tau_wind, tau_wave=tau_wave, dt = dt)
+
         
         #construct the messages
         eta_message.x, eta_message.y, eta_message.z, eta_message.psi = self.eta[0], self.eta[1],self.eta[2], self.eta[5] 
         nu_message.u, nu_message.v, nu_message.w, nu_message.p, nu_message.q, nu_message.r = map(lambda x:x, self.nu)
+
+        nu_dot_message.u_dot, nu_dot_message.v_dot, nu_dot_message.w_dot, nu_dot_message.p_dot, nu_dot_message.q_dot, nu_dot_message.r_dot = map(lambda x:x, self.nu_dot)
+
         self.prev_timestamp = now
         
         #publish the messages
         self.eta_pub.publish(eta_message)
         self.nu_pub.publish(nu_message)
+        self.nu_dot_pub.publish(nu_dot_message)
+
         print()
     
     def dynamics(self, eta:np.array, nu:np.array, tau_prop:np.array, tau_wind:np.array, tau_wave:np.array, dt:float):
@@ -183,9 +199,11 @@ class Simulator(Node):
         #forward Euler integration [k+1]
         nu = nu + nudot * dt
         eta = self.attitudeEuler(eta=eta, nu=nu, sampleTime=dt)
-        print(f"eta: {eta}")
+
+        print(f"nu_dot: {nudot}")
         print(f"nu: {nu}")
-        return eta, nu
+        print(f"eta: {eta}")
+        return eta, nu, nudot
 
     def Dv(self, nu:np.array):
         """Returns the D(nu) matrix.
@@ -204,8 +222,10 @@ class Simulator(Node):
         Dv = np.zeros((6,6))
         Xuu= self.Xuu * abs(u)
         Xuuu= self.Xuuu * abs(u)**2
-        Xurr = self.Xurr * abs(u)*abs(r) #modeling surge damping when turning
-        Nuur = self.Nuur * abs(u) #modeling yaw damping when speed in surge is present
+
+        Xurr = self.Xurr * abs(u)*abs(r) # modeling surge damping when turning
+        Nur = self.Nur * abs(u) # modeling yaw damping when speed in surge is present #
+        Nuur = self.Nuur * abs(u)**2 # modeling yaw damping when speed in surge is present
         
         Dv[0,0] = Xuu + Xuuu
         Dv[5,0] = Xurr
@@ -213,7 +233,6 @@ class Simulator(Node):
         print(f"Dv:{Dv}")
         return Dv
         
-
     def R_b2ned(self, psi:float):
         """
         rotate the vector from body to NED
@@ -276,6 +295,7 @@ class Simulator(Node):
         # Forward Euler integration
         eta[0:3] = eta[0:3] + sampleTime * p_dot
         eta[3:6] = eta[3:6] + sampleTime * v_dot
+        eta[5] = eta[5] % (2*np.pi) #map the value between 0 and 2pi where 0 is north
 
         return eta
 

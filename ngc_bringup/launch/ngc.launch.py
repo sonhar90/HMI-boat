@@ -35,7 +35,6 @@ def generate_launch_description():
     )
 
 
-
     manual_control = Node(
         package= "ngc_sim", 
         executable="manual_control",

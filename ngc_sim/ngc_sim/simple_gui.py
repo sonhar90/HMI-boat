@@ -11,6 +11,8 @@ import pygame
 import BoatVisualizer as bv
 
 
+#TODO: IKKE implementert enda --> bruk PlotJuggler i stedet!
+
 class SimpleGui(Node):
     def __init__(self):
         super().__init__("simple_gui")
