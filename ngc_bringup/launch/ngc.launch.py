@@ -16,13 +16,24 @@ def generate_launch_description():
     sim_config = os.path.join(
         get_package_share_directory('ngc_bringup'),
         'config',
-        'params.yaml'
+        'arbeidsbaat',
+        'arbeidsbaat_params.yaml'
     ) 
 
     ld = LaunchDescription()
     sim_node = Node(
         package = "ngc_sim", 
         executable= "simulate",
+        #namespace="arbeidsbaat1",
+        name = 'ngc_sim',
+        output = 'screen', 
+        parameters= [sim_config]       
+        
+    )
+    sim_node2 = Node(
+        package = "ngc_sim", 
+        executable= "simulate",
+        namespace="arbeidsbaat2",
         name = 'ngc_sim',
         output = 'screen', 
         parameters= [sim_config]       
@@ -30,7 +41,8 @@ def generate_launch_description():
     )
     plotjuggler_node = Node(
         package = "plotjuggler", 
-        executable= "plotjuggler" 
+        executable= "plotjuggler",
+        arguments= [" --layout ~/ngc_ws/src/ngc_bringup/config/PlotJuggler_layout.xml"] 
         
     )
 
@@ -43,6 +55,7 @@ def generate_launch_description():
 
     
     ld.add_action(sim_node)
+    #ld.add_action(sim_node2)
     ld.add_action(manual_control)
     ld.add_action(plotjuggler_node)
     return ld

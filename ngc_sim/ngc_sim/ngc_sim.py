@@ -170,7 +170,6 @@ class Simulator(Node):
         self.nu_pub.publish(nu_message)
         self.nu_dot_pub.publish(nu_dot_message)
 
-        print()
     
     def dynamics(self, eta:np.array, nu:np.array, tau_prop:np.array, tau_wind:np.array, tau_wave:np.array, dt:float):
         """
@@ -199,7 +198,7 @@ class Simulator(Node):
         #forward Euler integration [k+1]
         nu = nu + nudot * dt
         eta = self.attitudeEuler(eta=eta, nu=nu, sampleTime=dt)
-
+        
         print(f"nu_dot: {nudot}")
         print(f"nu: {nu}")
         print(f"eta: {eta}")
