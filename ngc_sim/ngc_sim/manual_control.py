@@ -18,9 +18,9 @@ class Teleop(Node):
         self.x = 0
         self.y = 0
         self.th = 0
-        self.force_scalar_x = 1.0 #TODO legge disse inn som parametere  
-        self.force_scalar_y = 1.0
-        self.moment_scalar_z = 1.0
+        self.force_scalar_x = 1.0 * 1000#TODO legge disse inn som parametere  
+        self.force_scalar_y = 1.0 *1000
+        self.moment_scalar_z = 1.0 *1000
         self.can_print = True
         self.status = 0
 

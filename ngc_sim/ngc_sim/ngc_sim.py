@@ -118,7 +118,7 @@ class Simulator(Node):
 
         #rigid-body system inertia matrix MRB
         self.MRB_CO = self.__rigid_body_matrix()
-        self.MA = -np.diag([self.Xudot, self.Yvdot, self.Zwdot, self.Kpdot, self.Mqdot, self.Nrdot])
+        self.MA = np.diag([self.Xudot, self.Yvdot, self.Zwdot, self.Kpdot, self.Mqdot, self.Nrdot])
         self.M = self.MRB_CO + self.MA
         
         #print initialization information to the end-user
@@ -126,7 +126,7 @@ class Simulator(Node):
         self.get_logger().info(f"MRB_CO:{self.MRB_CO}")   
         self.get_logger().info(f"MA:{self.MA}") 
         self.get_logger().info(f"M:{self.M}") 
-        self.get_logger().info(f"CRB:{self.__rigid_body_coriolis_centripetal_matrix([0,0,0,1,1,1])}")    
+        self.get_logger().info(f"CRB:{self.m2c(self.MRB_CO, [0,0,0,0,0,1])}")    
         self.n = 0
         self.get_logger().info("The simulator node has started")
     
@@ -150,6 +150,7 @@ class Simulator(Node):
         M = 0
         N = self.tau.yaw_n
         tau_prop = np.array([X,Y,Z,K,M,N])
+        #print(f"tau_prop: {tau_prop}")
         tau_wind = np.array([0,0,0,0,0,0])
         tau_wave = np.array([0,0,0,0,0,0])
         #TODO vurder om self.eta og nu er intuitivt her, eller om dynamics bare tar det direkte fra classen
@@ -170,7 +171,6 @@ class Simulator(Node):
         self.nu_pub.publish(nu_message)
         self.nu_dot_pub.publish(nu_dot_message)
 
-    
     def dynamics(self, eta:np.array, nu:np.array, tau_prop:np.array, tau_wind:np.array, tau_wave:np.array, dt:float):
         """
         
@@ -181,27 +181,30 @@ class Simulator(Node):
         xdot = [etadot,nudot].T = [R(psi)v, M⁻¹(tau-C(v)v - D(v)v)
         """
 
-        tau = tau_prop+tau_wave+tau_wind # the extarnal forces acing on the vessel 
+        tau = tau_prop #+tau_wave+tau_wind # the extarnal forces acing on the vessel 
         Dcf= self.crossFlowDrag(L = self.l, B= self.b, T=self.draft, nu_r= nu) #returns a negative daming force in yaw and sway 
         D = self.D
-        #TODO add squared ad cubed surge damping
+        #TODO add squared and cubed surge damping
         #TODO maybe add the roll-infliction onn surge and yaw damping, as in Andrew Rosses PhD thesis 
-        #TODO skal vi bruke Ross sin modell som benytter lift and drag,  eller strip theory?
         M = self.M
         Minv = np.linalg.inv(M)
-        CRB = self.__rigid_body_coriolis_centripetal_matrix(nu=nu)
-        CA = self.__added_mass_coriolis_centripetal_matrix(self.MA, nu=nu)
+        CRB = self.m2c(self.MRB_CO, nu= nu) 
+        CA = 0*self.m2c(self.MA, nu=nu) #CA is destabelising the model!
         C = CRB + CA
-        
-        nudot = Minv @ ((tau + Dcf) - C @ nu - D @ nu - self.Dv(nu=nu) @ nu) 
+        #print(f"CA: {CA} \n CRB: {CRB}\n C: {C}\n")
+        ex_forces = Dcf - C @ nu - D @ nu - self.Dv(nu=nu) @ nu
+        nudot = Minv @ (tau_prop + ex_forces ) 
+        print(f"Dcf: {Dcf}")
+        #print(f"(C + D + self.Dv(nu=nu)) @ nu: {(C + D + self.Dv(nu=nu)) @ nu}")
+        #print(f"tau_prop:{tau_prop} - ex_forces:{ex_forces} = {tau_prop + ex_forces} ")
               
         #forward Euler integration [k+1]
         nu = nu + nudot * dt
         eta = self.attitudeEuler(eta=eta, nu=nu, sampleTime=dt)
         
-        print(f"nu_dot: {nudot}")
-        print(f"nu: {nu}")
-        print(f"eta: {eta}")
+        #print(f"nu_dot: {nudot}")
+        #print(f"nu: {nu}")
+        #print(f"eta: {eta}")
         return eta, nu, nudot
 
     def Dv(self, nu:np.array):
@@ -215,8 +218,7 @@ class Simulator(Node):
             Dv (np.array): Nonlinear damping matrix (without crossflow)
         """
 
-        extract_value_func = lambda x: x
-        u,v,w,p,q,r = map(extract_value_func, nu) #run exctract_value_funct on each element in the vector
+        u,v,w,p,q,r = map(lambda x: x, nu) #run exctract_value_funct on each element in the vector
         
         Dv = np.zeros((6,6))
         Xuu= self.Xuu * abs(u)
@@ -294,7 +296,7 @@ class Simulator(Node):
         # Forward Euler integration
         eta[0:3] = eta[0:3] + sampleTime * p_dot
         eta[3:6] = eta[3:6] + sampleTime * v_dot
-        eta[5] = eta[5] % (2*np.pi) #map the value between 0 and 2pi where 0 is north
+        eta[5] = eta[5]  % (2*np.pi) #map the value between 0 and 2pi where 0 is north
 
         return eta
 
@@ -326,44 +328,57 @@ class Simulator(Node):
         MRB_CO = H.T @ MRB_CG @ H # eq. 3.29 in HMHMC
         return MRB_CO
 
-    def __rigid_body_coriolis_centripetal_matrix(self, nu:np.array):
-        """ 
-        Compute the rigid body coriolis centripetal matrix based on the angulare veocities in yaw.
-        
-        Input: nu (6DOF)
-
-        Returns: CRB """
-        #TODO CRB er trolig ikke riktig implementert!
-        nu2 = nu[3:6]
-        
-        H = self.__transform_center_of_gravity_to_center_of_origin()
-        CRB_CG = np.vstack([np.hstack([self.m * self.skew(nu2), np.zeros((3,3), dtype=float)]),
-                            np.hstack([np.zeros((3,3), dtype= float), -self.skew(self.Ig @ nu2)])])
-        
-        CRB_CO = H.T @ CRB_CG @ H
-        return CRB_CO
-
-    def __added_mass_coriolis_centripetal_matrix(self, MA:np.array, nu:np.array):
-        """ 
-        Computes the added coriolis added mass matrix. According to eq 6.44 in HMHMC 20021.
-        Input: MA, nu
-        Returns: CA 
+    def Smtrx(self, a):#(Author: Fossen, 2021)
         """
-        A11 = MA[0:3,0:3]
-        A12 = MA[0:3,3:6]
-        A21 = A12.T
-        A22 = MA[3:6,3:6]
+        S = Smtrx(a) computes the 3x3 vector skew-symmetric matrix S(a) = -S(a)'.
+        The cross product satisfies: a x b = S(a)b. 
+        """
+    
+        S = np.array([ 
+            [ 0, -a[2], a[1] ],
+            [ a[2],   0,     -a[0] ],
+            [-a[1],   a[0],   0 ]  ])
 
-        nu1 = nu[0:3]
-        nu2 = nu[3:6]
-        dt_dun1 = (A11 @ nu1) + (A12 @ nu2)
-        dt_dun2 = (A21 @ nu1) + (A22 @ nu2)
+        return S
+    
+    def m2c(self, M, nu):#(Author: Fossen, 2021)
+        """
+        C = m2c(M,nu) computes the Coriolis and centripetal matrix C from the
+        mass matrix M and generalized velocity vector nu (Fossen 2021, Ch. 3)
+        """
 
-        # see eq. 6.44 in HMHMC
-        CA = np.vstack([np.hstack([np.zeros((3,3)), -self.skew(dt_dun1)]),
-                        np.hstack([-self.skew(dt_dun1), -self.skew(dt_dun2)])])
+        M = 0.5 * (M + M.T)     # systematization of the inertia matrix
+
+        if (len(nu) == 6):      #  6-DOF model
         
-        return CA
+            M11 = M[0:3,0:3]
+            M12 = M[0:3,3:6] 
+            M21 = M12.T
+            M22 = M[3:6,3:6] 
+        
+            nu1 = nu[0:3]
+            nu2 = nu[3:6]
+            dt_dnu1 = np.matmul(M11,nu1) + np.matmul(M12,nu2)
+            dt_dnu2 = np.matmul(M21,nu1) + np.matmul(M22,nu2)
+
+            #C  = [  zeros(3,3)      -Smtrx(dt_dnu1)
+            #      -Smtrx(dt_dnu1)  -Smtrx(dt_dnu2) ]
+            C = np.zeros( (6,6) )    
+            C[0:3,3:6] = -self.Smtrx(dt_dnu1)
+            C[3:6,0:3] = -self.Smtrx(dt_dnu1)
+            C[3:6,3:6] = -self.Smtrx(dt_dnu2)
+                
+        else:   # 3-DOF model (surge, sway and yaw)
+            #C = [ 0             0            -M(2,2)*nu(2)-M(2,3)*nu(3)
+            #      0             0             M(1,1)*nu(1)
+            #      M(2,2)*nu(2)+M(2,3)*nu(3)  -M(1,1)*nu(1)          0  ]    
+            C = np.zeros( (3,3) ) 
+            C[0,2] = -M[1,1] * nu[1] - M[1,2] * nu[2]
+            C[1,2] =  M[0,0] * nu[0] 
+            C[2,0] = -C[0,2]       
+            C[2,1] = -C[1,2]
+            
+        return C
     
     def crossFlowDrag(self, L:float,B:float,T:float,nu_r:np.array): #(Author: Fossen, 2021)
         """Calculates the nonlinear damping force.

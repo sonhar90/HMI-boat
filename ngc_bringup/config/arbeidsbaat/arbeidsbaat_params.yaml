@@ -26,24 +26,31 @@
       r_p: 0.0         #(double) location of the pont CP relative to the CO
           
       #linear added mass terms derived by assuming the ship hull to be an elipsioid
-      Xudot: 2030.0 #  aka. A11 = 2.7 *roh *nabla^(5/3) /L²  -- the approximation function of Snöding (1982)
-      Yvdot: 16628.0    # Considering the hull as an Ellipsiod (source:Determination of Added Mass and Inertia Moment of Marine Ships Moving in 6 Degrees of Freedom DOI: 10.11648/j.ijtet.20160201.12 )
-      Yrdot: 20000.0    # --"--
-      Zwdot: 16628.0    # --"--
-      Kpdot: 8361.0     # 1.7* m *R66² (from Fossen vehicle sim)
-      Mqdot: 83196.0    # Based on a elipsoid added mass as above
-      Nrdot: 84833.0    # -pi(T/L)² *[1/12 + 0,017 CB * B/T - 0,33 (B/L)]      (eq. 4.12)
+      Xudot: 3025.0 #2030.0 #  aka. A11 = 2.7 *roh *nabla^(5/3) /L²  -- the approximation function of Snöding (1982)
+      Yvdot: 12500.0    # Considering the hull as an Ellipsiod (source:Determination of Added Mass and Inertia Moment of Marine Ships Moving in 6 Degrees of Freedom DOI: 10.11648/j.ijtet.20160201.12 )
+      #Yrdot: 0.0 #20000.0    # --"--
+      Zwdot: 0.0 #16628.0    # --"--
+      Kpdot: 0.0 #8361.0     # 1.7* m *R66² (from Fossen vehicle sim)
+      Mqdot: 3232.0 #83196.0    # Based on a elipsoid added mass as above
+      Nrdot: 3235.0 #84833.0    # -pi(T/L)² *[1/12 + 0,017 CB * B/T - 0,33 (B/L)]      (eq. 4.12)
       
       #Linear damping terms
-      Xu: 0.0         #(double) surge linear damping term 
-      Xr: 1.0         #(double) damping element between surge and yaw
-      Yv: 1.0         #(double) sway damping term
+      Xu: 0.0 #130.0         #(double) surge linear damping term 
+      #Xr: 1.0        #(double) damping element between surge and yaw
+      Yv: 20000.0         #(double) sway damping term
       Zw: 1.0         #(double) heave damping term
       Kp: 1.0         #(double) roll damping term
       Mq: 1.0         #(double) pitch damping term
-      Nr: 1.0         #(double) yaw damping term
-      Nu: 1.0         #(double) damping element between surge and yaw
-
+      Nr: 20000.0        #(double) yaw damping term
+      #Nu: 1.0         #(double) damping element between surge and yaw
+      #""" D = np.diag([
+      #      self.M[0][0] / self.T_surge,
+      #      self.M[1][1] / self.T_sway,
+      #      self.M[2][2] / self.T_heave,
+      #      self.M[3][3] * 2 * self.zeta_roll  * self.w_roll,
+      #      self.M[4][4] * 2 * self.zeta_pitch * self.w_pitch,
+      #      self.M[5][5] / self.T_yaw
+      #      ])"""
       #Non-linear damping terms
       #second order (quadratic) damping terms
       
@@ -57,14 +64,14 @@
       Xuuu: 0.0       #(double) surge cubic damping term
 
       #Xvv: 1.0
-      Xurr: 1.0
+      Xurr: 0.0 #1.0
       #Xrv: 1.0
       #Xuvv: 1.0
       #Xrvu: 1.0       #(double) 
       #Xurr: 1.0
-      Nuur: 1.0
+      Nuur: 0.0 #0.1
 
-      Nur: 1.0
+      Nur: 0.0 #0.2
 
       
       #modeling the changes in lift and drag with respect to roll see. chap 4.4
