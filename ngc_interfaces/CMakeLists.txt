@@ -10,7 +10,7 @@ find_package(ament_cmake REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
-"msg/Ned.msg"
+"msg/Eta.msg"
 "msg/Nu.msg"
 "msg/NuDot.msg"
 "msg/Tau.msg"

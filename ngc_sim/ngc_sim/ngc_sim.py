@@ -2,11 +2,10 @@
 from typing import List
 import rclpy
 from rclpy.node import Node
-#from geometry_msgs.msg import Twist,Pose, Point, Vector3
-#from std_msgs.msg import Float64MultiArray
 import numpy as np
 from builtin_interfaces.msg import Time
-from ngc_interfaces.msg import Nu, NuDot, Ned, Tau
+from ngc_interfaces.msg import Eta, Nu, NuDot, Tau
+from ngc_utils.geo_utils import add_distance_to_lat_lon, calculate_distance_north_east
 
 np.set_printoptions(formatter={'float_kind': "{:.2f}".format})
 
@@ -17,18 +16,19 @@ class Simulator(Node):
     def __init__(self):
         super().__init__("ngc_sim")
         self.counter_ = 0
+
         self.eta = np.array([0,0,0,0,0,0], dtype= float)
         self.nu = np.array([0,0,0,0,0,0], dtype= float)
-
         self.nu_dot  = np.array([0,0,0,0,0,0], dtype= float)
 
-        self.eta_pub= self.create_publisher(Ned, "eta_sim", 1)
+        self.eta_pub= self.create_publisher(Eta, "eta_sim", 1)
         self.nu_pub = self.create_publisher(Nu, "nu_sim", 1)
         self.nu_dot_pub = self.create_publisher(NuDot, "nu_dot_sim", 1)
         self.tau_sub = self.create_subscription(Tau, "tau_prop",  self.force_cmd_callback, 10)
         self.timer_= self.create_timer(0.01, self.integrator_callback)
         self.prev_timestamp = None
         self.tau = Tau()
+        
         self.declare_parameters(
             namespace = "",
             parameters= [
@@ -63,9 +63,15 @@ class Simulator(Node):
             ('Zwdot', rclpy.Parameter.Type.DOUBLE),
             ('Kpdot', rclpy.Parameter.Type.DOUBLE),
             ('Mqdot', rclpy.Parameter.Type.DOUBLE),
-            ('Nrdot', rclpy.Parameter.Type.DOUBLE)
+            ('Nrdot', rclpy.Parameter.Type.DOUBLE),
+            ('latitude', rclpy.Parameter.Type.DOUBLE),
+            ('longitude', rclpy.Parameter.Type.DOUBLE)
         ])
         
+        # Initialize the latitude and longitude position from the config file
+        self.latitude = self.get_parameter('latitude').get_parameter_value().double_value
+        self.longitude = self.get_parameter('longitude').get_parameter_value().double_value
+
         self.m = self.get_parameter('m').get_parameter_value().double_value
         self.l = self.get_parameter('l').get_parameter_value().double_value
         self.b = self.get_parameter('b').get_parameter_value().double_value
@@ -131,35 +137,44 @@ class Simulator(Node):
         self.get_logger().info("The simulator node has started")
     
     def force_cmd_callback(self, msg:Tau):
-        self.tau = msg #takes the twist message and stores it
+        self.tau = msg 
         
 
     def integrator_callback(self):
-        eta_message = Ned()
+        eta_message = Eta()
         nu_message = Nu()
         nu_dot_message = NuDot()
 
-        now= self.get_clock().now().to_msg() 
+        now = self.get_clock().now().to_msg() 
+        
         if self.prev_timestamp is None:
             self.prev_timestamp = now # set the first timestep 
         dt = (now.sec - self.prev_timestamp.sec) + (now.nanosec -self.prev_timestamp.nanosec)*1e-9 # 1e-9 #convert to seconds 
+        
         X = self.tau.surge_x
         Y = self.tau.sway_y
         Z = 0
         K = 0
         M = 0
         N = self.tau.yaw_n
+
         tau_prop = np.array([X,Y,Z,K,M,N])
-        #print(f"tau_prop: {tau_prop}")
+   
         tau_wind = np.array([0,0,0,0,0,0])
         tau_wave = np.array([0,0,0,0,0,0])
-        #TODO vurder om self.eta og nu er intuitivt her, eller om dynamics bare tar det direkte fra classen
 
+        # Reset north and east positions in order to get the differential from last timestep
+        self.eta[0] = 0
+        self.eta[1] = 0
+
+        #TODO vurder om self.eta og nu er intuitivt her, eller om dynamics bare tar det direkte fra classen
         self.eta, self.nu , self.nu_dot= self.dynamics(eta=self.eta, nu=self.nu, tau_prop=tau_prop, tau_wind=tau_wind, tau_wave=tau_wave, dt = dt)
 
+        #Update latitude and longitude positions from the differetial change in north and east positions
+        self.latitude, self.longitude = add_distance_to_lat_lon(self.latitude, self.longitude, self.eta[0], self.eta[1])
         
         #construct the messages
-        eta_message.x, eta_message.y, eta_message.z, eta_message.psi = self.eta[0], self.eta[1],self.eta[2], self.eta[5] 
+        eta_message.lat, eta_message.lon, eta_message.z, eta_message.psi = self.latitude, self.longitude,self.eta[2], self.eta[5] 
         nu_message.u, nu_message.v, nu_message.w, nu_message.p, nu_message.q, nu_message.r = map(lambda x:x, self.nu)
 
         nu_dot_message.u_dot, nu_dot_message.v_dot, nu_dot_message.w_dot, nu_dot_message.p_dot, nu_dot_message.q_dot, nu_dot_message.r_dot = map(lambda x:x, self.nu_dot)
@@ -194,7 +209,7 @@ class Simulator(Node):
         #print(f"CA: {CA} \n CRB: {CRB}\n C: {C}\n")
         ex_forces = Dcf - C @ nu - D @ nu - self.Dv(nu=nu) @ nu
         nudot = Minv @ (tau_prop + ex_forces ) 
-        print(f"Dcf: {Dcf}")
+        #print(f"Dcf: {Dcf}")
         #print(f"(C + D + self.Dv(nu=nu)) @ nu: {(C + D + self.Dv(nu=nu)) @ nu}")
         #print(f"tau_prop:{tau_prop} - ex_forces:{ex_forces} = {tau_prop + ex_forces} ")
               
@@ -231,7 +246,7 @@ class Simulator(Node):
         Dv[0,0] = Xuu + Xuuu
         Dv[5,0] = Xurr
         Dv[0,5] = Nuur
-        print(f"Dv:{Dv}")
+        
         return Dv
         
     def R_b2ned(self, psi:float):

@@ -1,0 +1,6 @@
+source;share/ngc_thruster_model/hook/pythonpath.ps1
+source;share/ngc_thruster_model/hook/pythonpath.dsv
+source;share/ngc_thruster_model/hook/pythonpath.sh
+source;share/ngc_thruster_model/hook/ament_prefix_path.ps1
+source;share/ngc_thruster_model/hook/ament_prefix_path.dsv
+source;share/ngc_thruster_model/hook/ament_prefix_path.sh
