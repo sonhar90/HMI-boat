@@ -191,12 +191,9 @@ class Simulator(Node):
         CRB = self.m2c(self.MRB_CO, nu= nu) 
         CA = 0*self.m2c(self.MA, nu=nu) #CA is destabelising the model!
         C = CRB + CA
-        #print(f"CA: {CA} \n CRB: {CRB}\n C: {C}\n")
         ex_forces = Dcf - C @ nu - D @ nu - self.Dv(nu=nu) @ nu
         nudot = Minv @ (tau_prop + ex_forces ) 
-        print(f"Dcf: {Dcf}")
-        #print(f"(C + D + self.Dv(nu=nu)) @ nu: {(C + D + self.Dv(nu=nu)) @ nu}")
-        #print(f"tau_prop:{tau_prop} - ex_forces:{ex_forces} = {tau_prop + ex_forces} ")
+
               
         #forward Euler integration [k+1]
         nu = nu + nudot * dt
@@ -231,7 +228,6 @@ class Simulator(Node):
         Dv[0,0] = Xuu + Xuuu
         Dv[5,0] = Xurr
         Dv[0,5] = Nuur
-        print(f"Dv:{Dv}")
         return Dv
         
     def R_b2ned(self, psi:float):

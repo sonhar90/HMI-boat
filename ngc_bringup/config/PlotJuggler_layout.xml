@@ -3,25 +3,25 @@
  <tabbed_widget parent="main_window" name="Main Window">
   <Tab containers="1" tab_name="tab4">
    <Container>
-    <DockSplitter sizes="0.476327;0.523673" orientation="-" count="2">
-     <DockSplitter sizes="0.332951;0.334099;0.332951" orientation="|" count="3">
+    <DockSplitter sizes="0.500566;0.499434" count="2" orientation="-">
+     <DockSplitter sizes="0.332459;0.335082;0.332459" count="3" orientation="|">
       <DockArea name="...">
-       <plot style="Lines" flip_y="false" mode="XYPlot" flip_x="false">
-        <range right="91.879993" bottom="1910.846869" top="2102.884332" left="-91.879993"/>
+       <plot mode="XYPlot" flip_y="false" style="Lines" flip_x="false">
+        <range bottom="-0.100000" left="0.000000" top="0.100000" right="72.657411"/>
         <limitY/>
-        <curve name="/eta_sim/[y;x]" curve_y="/eta_sim/x" curve_x="/eta_sim/y" color="#9467bd"/>
+        <curve curve_x="/eta_sim/y" curve_y="/eta_sim/x" name="/eta_sim/[y;x]" color="#9467bd"/>
        </plot>
       </DockArea>
       <DockArea name="...">
-       <plot style="Lines" flip_y="false" mode="TimeSeries" flip_x="false">
-        <range right="91.879993" bottom="-0.100000" top="0.100000" left="-91.879993"/>
+       <plot mode="TimeSeries" flip_y="false" style="Lines" flip_x="false">
+        <range bottom="-0.100000" left="0.000000" top="0.100000" right="72.657411"/>
         <limitY/>
         <curve name="/eta_sim/psi" color="#1f77b4"/>
        </plot>
       </DockArea>
       <DockArea name="...">
-       <plot style="Lines" flip_y="false" mode="TimeSeries" flip_x="false">
-        <range right="91.879993" bottom="-0.000036" top="0.001467" left="-91.879993"/>
+       <plot mode="TimeSeries" flip_y="false" style="Lines" flip_x="false">
+        <range bottom="-0.100000" left="0.000000" top="0.100000" right="72.657411"/>
         <limitY/>
         <curve name="/nu_dot_sim/r_dot" color="#1ac938"/>
         <curve name="/nu_dot_sim/u_dot" color="#ff7f0e"/>
@@ -29,19 +29,31 @@
        </plot>
       </DockArea>
      </DockSplitter>
-     <DockSplitter sizes="0.5;0.5" orientation="|" count="2">
+     <DockSplitter sizes="0.25;0.25;0.25;0.25" count="4" orientation="|">
       <DockArea name="...">
-       <plot style="Lines" flip_y="false" mode="TimeSeries" flip_x="false">
-        <range right="91.879993" bottom="-0.457611" top="18.762049" left="-91.879993"/>
+       <plot mode="TimeSeries" flip_y="false" style="Lines" flip_x="false">
+        <range bottom="-0.100000" left="0.000000" top="0.100000" right="72.657411"/>
         <limitY/>
-        <curve name="/nu_sim/r" color="#1f77b4"/>
         <curve name="/nu_sim/u" color="#d62728"/>
+       </plot>
+      </DockArea>
+      <DockArea name="...">
+       <plot mode="TimeSeries" flip_y="false" style="Lines" flip_x="false">
+        <range bottom="-0.100000" left="0.000000" top="0.100000" right="72.657411"/>
+        <limitY/>
         <curve name="/nu_sim/v" color="#1ac938"/>
        </plot>
       </DockArea>
       <DockArea name="...">
-       <plot style="Lines" flip_y="false" mode="TimeSeries" flip_x="false">
-        <range right="91.879993" bottom="-162.500000" top="6662.500000" left="-91.879993"/>
+       <plot mode="TimeSeries" flip_y="false" style="Lines" flip_x="false">
+        <range bottom="-0.100000" left="0.000000" top="0.100000" right="72.657411"/>
+        <limitY/>
+        <curve name="/nu_sim/r" color="#ff7f0e"/>
+       </plot>
+      </DockArea>
+      <DockArea name="...">
+       <plot mode="TimeSeries" flip_y="false" style="Lines" flip_x="false">
+        <range bottom="-0.100000" left="0.000000" top="0.100000" right="72.657411"/>
         <limitY/>
         <curve name="/tau_prop/surge_x" color="#d62728"/>
         <curve name="/tau_prop/sway_y" color="#1ac938"/>
@@ -59,7 +71,7 @@
  <!-- - - - - - - - - - - - - - - -->
  <Plugins>
   <plugin ID="DataLoad CSV">
-   <parameters delimiter="0" time_axis=""/>
+   <parameters time_axis="" delimiter="0"/>
   </plugin>
   <plugin ID="DataLoad MCAP"/>
   <plugin ID="DataLoad ROS2 bags">
@@ -77,7 +89,7 @@
    <max_array_size value="100"/>
    <boolean_strings_to_number value="true"/>
    <remove_suffix_from_strings value="true"/>
-   <selected_topics value="/eta_sim;/nu_dot_sim;/nu_sim;/tau_prop"/>
+   <selected_topics value="/eta_sim;/nu_dot_sim;/nu_sim;/tau_prop;/set_points_thrusters"/>
   </plugin>
   <plugin ID="UDP Server"/>
   <plugin ID="WebSocket Server"/>

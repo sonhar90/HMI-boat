@@ -2,60 +2,84 @@ import os
 import launch
 from launch import LaunchDescription
 from launch.substitutions import TextSubstitution
-from launch.actions import DeclareLaunchArgument
+from launch.actions import DeclareLaunchArgument, TimerAction, ExecuteProcess
 from launch_ros.actions import Node
 from ament_index_python.packages import get_package_share_directory
+from launch.actions import RegisterEventHandler, LogInfo
+from launch.event_handlers import OnExecutionComplete, OnProcessExit, OnProcessStart
 
-
+#: https://roboticscasual.com/tutorial-ros2-launch-files-all-you-need-to-know/ 
 def generate_launch_description():
+
 
 
     run_man_control_args = DeclareLaunchArgument(
         name = 'launch-prefix', default_value= TextSubstitution(text= "gnome-terminal --command")
     )
-    sim_config = os.path.join(
+    sim_params = os.path.join(
         get_package_share_directory('ngc_bringup'),
         'config',
         'arbeidsbaat',
         'arbeidsbaat_params.yaml'
     ) 
 
-    ld = LaunchDescription()
+    
+    thruster_config = os.path.join(
+        get_package_share_directory('ngc_bringup'),
+        'config',
+        'arbeidsbaat',
+        'thrusters.yaml'
+    ) 
+    plotjuggler_config = os.path.join(
+        get_package_share_directory('ngc_bringup'),
+        'config',
+        'PlotJuggler_layout.xml'
+    )
+
+    
     sim_node = Node(
         package = "ngc_sim", 
         executable= "simulate",
         #namespace="arbeidsbaat1",
         name = 'ngc_sim',
         output = 'screen', 
-        parameters= [sim_config]       
+        parameters= [sim_params]       
         
     )
-    sim_node2 = Node(
-        package = "ngc_sim", 
-        executable= "simulate",
-        namespace="arbeidsbaat2",
-        name = 'ngc_sim',
-        output = 'screen', 
-        parameters= [sim_config]       
-        
-    )
+    
+
     plotjuggler_node = Node(
         package = "plotjuggler", 
         executable= "plotjuggler",
-        arguments= [" --layout ~/ngc_ws/src/ngc_bringup/config/PlotJuggler_layout.xml"] 
+        arguments= ["--layout",  plotjuggler_config] 
         
     )
-
+    delayed_plotjuggler= TimerAction(period= 3.0, actions=[plotjuggler_node])
 
     manual_control = Node(
-        package= "ngc_sim", 
-        executable="manual_control",
-        #arguments= run_man_control_args
+        package= "ngc_teleop", 
+        executable="manual_set_point_arbeidsbaat",
+        #arguments= [f"thruster_config_file_name:= {thruster_config}"]
+        )
+    
+    thruster_system = Node(
+        package= "ngc_thruster_system", 
+        executable="thruster_system",
+        output = 'screen', 
+        parameters= [{"thruster_config_file_name": thruster_config}]
         )
 
+    delayed_thruster_system = TimerAction(period= 3.0, actions=[thruster_system])
+    event_handler = RegisterEventHandler(
+                event_handler=OnProcessStart(
+                target_action=sim_node,
+                on_start=[thruster_system],
+            ))
+    
+    ld = LaunchDescription() 
     
     ld.add_action(sim_node)
-    #ld.add_action(sim_node2)
     ld.add_action(manual_control)
-    ld.add_action(plotjuggler_node)
+    ld.add_action(delayed_thruster_system)
+    ld.add_action(delayed_plotjuggler)
     return ld

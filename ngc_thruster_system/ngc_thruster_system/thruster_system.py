@@ -7,26 +7,32 @@ from ngc_thruster_system.thruster_model import FixedPitchPropeller, Azimuth, Tun
 from ngc_interfaces.msg import Tau, SetPoints, Nu
 import math
 
+import rclpy.time
+
+
 """
 The Thruster System class is the manager class in the thruster system and is repsonible to derive the thrust forces
 """
 class ThrusterSystem(Node):
     def __init__(self):
         super().__init__("thruster_system")
-        self.declare_parameter("thruster_config_file", "")
+        self.declare_parameter("thruster_config_file_name", "")
         self.get_logger().info("Waiting for thruster config file path...")
-        self.config_file = self.get_parameter("thruster_config_file").value
+        self.config_file_name = self.get_parameter("thruster_config_file_name").value
+        self.get_logger().info(f"thruster system config filename: {self.config_file_name}")
         #TODO:pass this as an argument from the launch file? 
-        self.thrusters = self.load_thrusters_from_yaml("/home/nupix/ngc_ws/src/ngc_bringup/config/arbeidsbaat/thrusters.yaml")
+        self.thrusters = self.load_thrusters_from_yaml(self.config_file_name)
         print("Loaded thruster objects:")
         for thruster in self.thrusters:
             print(f"  - Name: {thruster.name}, Type: {type(thruster).__name__}")
         self.get_logger().info("Thruster system node started!")
         self.set_points = SetPoints()
         self.nu = Nu()
-        self.set_point_subscriber = self.create_subscription(SetPoints, "set_points", self.set_point_callback, 10)
+        self.nu.u = 0.0
+        self.nu.v = 0.0
+        self.set_point_subscriber = self.create_subscription(SetPoints, "set_points_thrusters", self.set_point_callback, 2)
         self.nu_subscriber = self.create_subscription(Nu, "nu_sim", self.nu_callback, 10)
-        self.tau_publisher = self.create_publisher(Tau, "tau_thrust", 1)        
+        self.tau_publisher = self.create_publisher(Tau, "tau_prop", 1)        
         self.timer = self.create_timer(0.05, self.publish_tau_callback)
     
     def publish_tau_callback(self):
@@ -107,7 +113,7 @@ class ThrusterSystem(Node):
                 thruster.distance_propeller_rudder = rudder_config.get('l_prop_to_rudder', 0.0)
 
             # Add thruster to the list
-            print(thruster.position)
+            #print(thruster.position)
             thrusters.append(thruster)
 
         return thrusters

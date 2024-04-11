@@ -32,7 +32,7 @@ class Thruster():
         self.angle_lower = 0
         self.position = [0,0,0] #defines the positon from ceter of origin (CO)
         self.thrust_config_mtrx = np.array([0,0,0,0,0,0,0]) #generalized in 6DOF, to handle forces in surge, sway , heav, pitch, roll, yaw 
-        self.debug = False
+        self.debug = True
     
     @abstractmethod
     def get_tau(self, nu, n, pitch, angle = None):
@@ -73,7 +73,8 @@ class ControllablePitchPropellerAndRudder(Thruster):
         ar = b**2 /(A_R) #aspect ratio
         #CN = 6.13 *ar /(ar +2.25)
         x_p = x_R = self.position[0] # longitudial position of propeller relative to midship
-        U = nu.u + nu.v
+        U = math.sqrt(nu.u**2 + nu.v**2)
+        print(f"abs velocity: {U}")
         C_B = self.rudder_block_coeff # guessed values since the rudder is thick at one end a thin at the other Block coefficient (how much of the box volume is the rudder displacing?)
         L_pp = 11.0 #length between perpendiculars #make this a variable in the ship model config file
         epsilon = 1.09 #typically 1.09 according to fossen at page 238
@@ -95,23 +96,26 @@ class ControllablePitchPropellerAndRudder(Thruster):
         wp =  wp0 *  math.exp(-4* beta_p**2)    # For ships with one propeller typical values are between 0.2 and 0.45 according to https://www.quora.com/What-is-the-wake-fraction-of-a-propeller-in-a-ship 
         y_R = 1 #straighetening effect from the propeler slip stream (the propeller and rudder are very close and it is therefore set to 1)
         beta_R = beta * x_R # effective inflow angle to rudder        
-        f_alpha = (6.13*A_R)/(A_R +2.25)
+        f_alpha = (6.13*A_R)/(A_R +2.25) #rudder profile
         t_R = 0.45-0-25*C_B
         x_H = -(0.4 +0.1*C_B)
         
         #TODO: Investigate if it is a problem that this canot be a negative number.
-        if u ==0.0 or n ==0.0 :
-            J = 0.01
+        if n ==0.0 :
+            J = 0.0
         else: 
             J = u*(1-wp)/(n*D)
 
         tau_prop_x = (1-t) * roh *n**2 * D**4 *self.thrust_torque_curve(J=J, pitch= pitch)
+        
         #alternative formulation (unknown source) : tau_prop_x = roh * D**4 *(math.pi * 0.2**2 * 0.5) * self.thrust_torque_curve(pitch = pitch, J= J) * n**2
-
+        
+        #TODO: simplify this so we have one expression for the rudder velocity 
         ###### calculate the rudder steering forces ######
         if n == 0.0: #if the propeller is at stand still
             u_R = epsilon *u*(1-wp) #The velocity over the rudder is only due to the surge speed of the vessel
         elif u == 0.0: #if the surge speed is zero, the only velocity over the rudder is caused by the propeller
+            #TODO: simplify this
             #the follwoing model is derived by using a combination of the soruces: [3](Appendix. A),[4](p.84), [5](p.190)
             UR0 = 0 #the surge speed is zero in this case
             x= self. distance_propeller_rudder
@@ -124,15 +128,18 @@ class ControllablePitchPropellerAndRudder(Thruster):
 
         else: #if the vessle is moving and the propeller is running
             u_R = epsilon *u*(1-wp) * math.sqrt(eta*(1+ k * (math.sqrt(1 + (8*self.thrust_torque_curve(pitch = pitch,J= J)/(math.pi *J**2)))-1)**2 +(1-eta))) 
-
-        v_R = U*y_R *beta_R
+            print(f"vel rudder: {u_R}")
+        #TODO: Go through this and evaluate if it is necessary 
+        """v_R = U*y_R *beta_R
         
         if v_R != 0 and u_R != 0:
             a_R = angle - math.atan(u_R/v_R)
         else:
             a_R =  angle
         
-        U_R = math.sqrt(u_R**2 + v_R**2)
+        U_R = math.sqrt(u_R**2 + v_R**2)"""
+        U_R = u_R
+        a_R = angle
         #compute the rudder Normal force based on the relative rudder angle of attack and velocities
         tau_R_N= 0.5 *roh *A_R*U_R**2 *f_alpha*math.sin(a_R)
         X_R = -(1-t_R)*tau_R_N *math.sin(a_R)
@@ -147,7 +154,7 @@ class ControllablePitchPropellerAndRudder(Thruster):
             print(f"X_R: {X_R}")
             print(f"")
 
-        tau = np.array([tau_prop_x+X_R, Y_R, N_R])
+        tau = np.array([math.copysign(tau_prop_x, n)+X_R, Y_R, N_R])
 
         return tau
 
