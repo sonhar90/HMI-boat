@@ -1,6 +1,6 @@
 from setuptools import find_packages, setup
 
-package_name = 'ngc_thruster_model'
+package_name = 'ngc_thruster_system'
 
 setup(
     name=package_name,
@@ -14,12 +14,13 @@ setup(
     install_requires=['setuptools'],
     zip_safe=True,
     maintainer='nupix',
-    maintainer_email='nupix@todo.todo',
+    maintainer_email='aksel.t.frafjord@ntnu.no',
     description='TODO: Package description',
     license='TODO: License declaration',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+            "thruster_system = ngc_thruster_system.thruster_system:main"
         ],
     },
 )

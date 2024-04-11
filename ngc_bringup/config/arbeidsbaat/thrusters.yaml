@@ -1,1 +1,25 @@
 #paramaeter for the thrusters on the boat
+
+rud_prop1: #name of the thruster
+  position: [6,-1,0] # the position of the thruster form CO (the forces are poisitve in the direction according to the SNAME-notation)
+  type: rudder_propeller_variable    #(str) [propeller_fixed, propeller_variable_rudder]
+  thrust_torque_curve:  my_KT_curve          #must match a function name in ThrustTorqueCurves.py the the system supports a veriety of blades with different KT and KQ curves.
+  prop_diameter:         0.4              # the prop diameter in meters
+  rudder:
+    height: 0.5                      #the rudder height in meters
+    length: 0.4
+    thikness: 0.02
+    block_coeff: 0.5
+    l_prop_to_rudder: 1.0            #distance from center of propeller to center of lift to ruderrudder
+
+rud_prop2: #name of the thruster
+  position: [6,1,0] # the position of the thruster form CO (the forces are poisitve in the direction according to the SNAME-notation)
+  type: rudder_propeller_variable    #(str) [propeller_fixed, propeller_variable_rudder]
+  thrust_torque_curve:  my_KT_curve          #must match a function name in ThrustTorqueCurves.py the the system supports a veriety of blades with different KT and KQ curves.
+  prop_diameter:         0.4              # the prop diameter in meters
+  rudder:
+    height: 0.5                      #the rudder height in meters
+    length: 0.4
+    thikness: 0.02
+    block_coeff: 0.5
+    l_prop_to_rudder: 1.0            #distance from center of propeller to center of lift to ruderrudder

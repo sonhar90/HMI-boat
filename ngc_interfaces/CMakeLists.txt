@@ -14,6 +14,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
 "msg/Nu.msg"
 "msg/NuDot.msg"
 "msg/Tau.msg"
+"msg/SetPoints.msg"
 )
 
 ament_export_dependencies(rosidl_default_runtime)
