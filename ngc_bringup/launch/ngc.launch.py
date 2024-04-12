@@ -40,13 +40,25 @@ def generate_launch_description():
     sim_node = Node(
         package = "ngc_sim", 
         executable= "simulate",
-        #namespace="arbeidsbaat1",
         name = 'ngc_sim',
         output = 'screen', 
         parameters= [sim_params]       
         
     )
+
+    gnss_node = Node(
+        package = "ngc_sensor_sims", 
+        executable= "gnss",
+        name = 'gnss'
+        #parameters= [sim_config] 
+    )
     
+    compass_node = Node(
+        package = "ngc_sensor_sims", 
+        executable= "compass",
+        name = 'compass'
+        #parameters= [sim_config] 
+    )
 
     plotjuggler_node = Node(
         package = "plotjuggler", 
@@ -79,6 +91,8 @@ def generate_launch_description():
     ld = LaunchDescription() 
     
     ld.add_action(sim_node)
+    ld.add_action(gnss_node)
+    ld.add_action(compass_node)
     ld.add_action(manual_control)
     ld.add_action(delayed_thruster_system)
     ld.add_action(delayed_plotjuggler)

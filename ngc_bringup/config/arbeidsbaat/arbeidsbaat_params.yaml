@@ -5,6 +5,10 @@
       #material and physichal parameters for "NTNU Arbeidsbaaten"
       roh: 1026.0      #(double) denstity of the water (kg/m³)
 
+      # Initial position in decimal degrees (for simulator)
+      latitude: 62.485778
+      longitude: 6.11575
+
       #vehicle paramaters:
       m: 20000.0     #(double) total mass ofthe vehicle in kg
       payload: 0.0        #(double) payload
