@@ -77,7 +77,7 @@ def generate_launch_description():
     thruster_system = Node(
         package= "ngc_thruster_system", 
         executable="thruster_system",
-        output = 'screen', 
+        #output = 'screen', 
         parameters= [{"thruster_config_file_name": thruster_config}]
         )
 

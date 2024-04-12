@@ -6,7 +6,7 @@ from rclpy.node import Node
 #from std_msgs.msg import Float64MultiArray
 import numpy as np
 from builtin_interfaces.msg import Time
-from ngc_interfaces.msg import Nu, NuDot, Ned, Tau
+from ngc_interfaces.msg import Nu, NuDot, Tau
 import math
 from abc import ABC, abstractmethod
 from ngc_thruster_system.thrust_torque_curve import ThrustTorqueCurve
@@ -100,7 +100,6 @@ class ControllablePitchPropellerAndRudder(Thruster):
         t_R = 0.45-0-25*C_B
         x_H = -(0.4 +0.1*C_B)
         
-        #TODO: Investigate if it is a problem that this canot be a negative number.
         if n ==0.0 :
             J = 0.0
         else: 
@@ -154,7 +153,7 @@ class ControllablePitchPropellerAndRudder(Thruster):
             print(f"X_R: {X_R}")
             print(f"")
 
-        tau = np.array([math.copysign(tau_prop_x, n)+X_R, Y_R, N_R])
+        tau = np.array([(tau_prop_x*math.copysign(1.0, n))+X_R, Y_R, N_R])
 
         return tau
 

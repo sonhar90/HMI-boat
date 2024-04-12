@@ -20,7 +20,6 @@ class ThrusterSystem(Node):
         self.get_logger().info("Waiting for thruster config file path...")
         self.config_file_name = self.get_parameter("thruster_config_file_name").value
         self.get_logger().info(f"thruster system config filename: {self.config_file_name}")
-        #TODO:pass this as an argument from the launch file? 
         self.thrusters = self.load_thrusters_from_yaml(self.config_file_name)
         print("Loaded thruster objects:")
         for thruster in self.thrusters:
