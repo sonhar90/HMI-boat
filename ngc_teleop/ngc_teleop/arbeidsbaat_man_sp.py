@@ -13,7 +13,7 @@ class SetPointsTeleop(Node):
         super().__init__('set_points_teleop')
         self.timer_period_ = 0.01  # seconds
         self.timer_ = self.create_timer(self.timer_period_, self.publish_commands)
-        self.send_cmd = self.create_publisher(SetPoints, 'set_points_thrusters', 10)
+        self.send_cmd = self.create_publisher(SetPoints, 'set_points_thrusters', 1)
         self.set_points = []
         self.n = 0.0
         self.pitch = 0.5

@@ -9,10 +9,10 @@ import math
 
 import rclpy.time
 
-
 """
 The Thruster System class is the manager class in the thruster system and is repsonible to derive the thrust forces
 """
+
 class ThrusterSystem(Node):
     def __init__(self):
         super().__init__("thruster_system")
@@ -26,13 +26,15 @@ class ThrusterSystem(Node):
             print(f"  - Name: {thruster.name}, Type: {type(thruster).__name__}")
         self.get_logger().info("Thruster system node started!")
         self.set_points = SetPoints()
+        self.set_points.setpoints = [0.0] * (3*len(self.thrusters)) #initiate node with all set points set to zero.
         self.nu = Nu()
         self.nu.u = 0.0
         self.nu.v = 0.0
-        self.set_point_subscriber = self.create_subscription(SetPoints, "set_points_thrusters", self.set_point_callback, 2)
+        self.set_point_subscriber = self.create_subscription(SetPoints, "set_points_thrusters", self.set_point_callback, 10)
         self.nu_subscriber = self.create_subscription(Nu, "nu_sim", self.nu_callback, 10)
-        self.tau_publisher = self.create_publisher(Tau, "tau_prop", 1)        
-        self.timer = self.create_timer(0.05, self.publish_tau_callback)
+        self.tau_publisher = self.create_publisher(Tau, "tau_prop", 10)        
+        self.timer = self.create_timer(0.01, self.publish_tau_callback)
+        self.prev_timestamp = None
     
     def publish_tau_callback(self):
         #test paramas:
@@ -47,6 +49,13 @@ class ThrusterSystem(Node):
         self.set_points = test"""
         #####test params done
 
+        now = self.get_clock().now().to_msg()
+
+        if self.prev_timestamp is None:
+            self.prev_timestamp = now # set the first timestep 
+        dt = (now.sec - self.prev_timestamp.sec) + (now.nanosec -self.prev_timestamp.nanosec)*1e-9 # 1e-9 #convert to seconds 
+        self.prev_timestamp = now
+
         thruster_forces =  []
 
         sp = np.array(self.set_points.setpoints)
@@ -58,7 +67,7 @@ class ThrusterSystem(Node):
             pitch = thruster_sp[1]
             angle = thruster_sp[2]
             name = thruster.name
-            thruster_forces.append(thruster.get_tau(nu= self.nu, n= n, pitch = pitch, angle = angle))
+            thruster_forces.append(thruster.get_tau(nu= self.nu, n= n, pitch = pitch, angle = angle, dt = dt))
         
         sum_thruster_forces = np.sum(thruster_forces, axis = 0)
         tau_msg = Tau()
@@ -85,6 +94,8 @@ class ThrusterSystem(Node):
             thruster_type = config.get('type')
             thrust_torque_curve = config.get('thrust_torque_curve')
             prop_diameter = config.get('prop_diameter')
+            time_constant_n = config.get('time_constant_n')
+            
             rudder_config = config.get('rudder', {})
 
             # Create thruster object based on type
@@ -92,6 +103,7 @@ class ThrusterSystem(Node):
                 thruster = FixedPitchPropeller(name, thrust_torque_curve, prop_diameter)
             elif thruster_type == "rudder_propeller_variable":
                 thruster = ControllablePitchPropellerAndRudder(name, thrust_torque_curve, prop_diameter)
+                thruster.time_constant_pitch = config.get('time_constant_pitch', 0.1)
             elif thruster_type == 'azimuth':
                 thruster = Azimuth(name, thrust_torque_curve, prop_diameter)
             elif thruster_type == 'tunnel_thruster':
@@ -102,6 +114,7 @@ class ThrusterSystem(Node):
             # Set common attributes
             thruster.name = name
             thruster.position = position
+            thruster.time_constant_n = time_constant_n
 
             # Set rudder attributes if defined
             if rudder_config:
@@ -110,9 +123,10 @@ class ThrusterSystem(Node):
                 thruster.rudder_block_coeff = rudder_config.get('block_coeff', 0.5)
                 thruster.rudder_thikness = rudder_config.get('thikness', 0.0)
                 thruster.distance_propeller_rudder = rudder_config.get('l_prop_to_rudder', 0.0)
+                thruster.time_constant_rudder = rudder_config.get('time_constant_rudder', 0.0)
 
+            print(thruster)
             # Add thruster to the list
-            #print(thruster.position)
             thrusters.append(thruster)
 
         return thrusters

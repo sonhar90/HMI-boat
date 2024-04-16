@@ -41,7 +41,7 @@ def generate_launch_description():
         package = "ngc_sim", 
         executable= "simulate",
         name = 'ngc_sim',
-        output = 'screen', 
+        #output = 'screen', 
         parameters= [sim_params]       
         
     )
