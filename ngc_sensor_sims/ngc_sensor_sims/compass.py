@@ -21,8 +21,8 @@ class CompassSimulator(Node):
             parameters=[
                 ('ID',1),
                 ('fix_frequency', 10.0),  # Default update frequency
-                ('heading_std_dev', 0.3),
-                ('rot_std_dev', 0.1),
+                ('heading_std_dev', 0.01),
+                ('rot_std_dev', 0.01),
                 ('udp_ip', '127.0.0.1'),
                 ('udp_port', 55555),
             ]

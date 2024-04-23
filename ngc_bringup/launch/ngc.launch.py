@@ -42,6 +42,13 @@ def generate_launch_description():
         name = 'compass'
         #parameters= [sim_config] 
     )
+    
+    anemometer_node = Node(
+        package = "ngc_sensor_sims", 
+        executable= "anemometer",
+        name = 'anemometer'
+        #parameters= [sim_config] 
+    )
 
     plotjuggler_node = Node(
         package = "plotjuggler", 
@@ -59,6 +66,7 @@ def generate_launch_description():
     ld.add_action(sim_node)
     ld.add_action(gnss_node)
     ld.add_action(compass_node)
+    ld.add_action(anemometer_node)
     ld.add_action(manual_control)
     ld.add_action(plotjuggler_node)
     return ld

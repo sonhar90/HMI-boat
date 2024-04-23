@@ -59,6 +59,7 @@ def create_gga_message(latitude, longitude, fix_quality=1, num_satellites=10, ho
     
     nmea_sentence_without_dollar = f"GPGGA,{time_utc},{formatted_lat},{formatted_lon},{fix_quality},{num_satellites},{horizontal_dilution},{altitude},M,{height_geoid},M,,"
     final_sentence = append_checksum(nmea_sentence_without_dollar)
+    
     return final_sentence
 
 def create_hdt_message(true_heading):
@@ -70,6 +71,7 @@ def create_hdt_message(true_heading):
     """
     nmea_sentence_without_dollar = f"GPHDT,{true_heading:.1f},T"
     final_sentence = append_checksum(nmea_sentence_without_dollar)
+    
     return final_sentence
 
 def create_vtg_message(u, v):
@@ -96,6 +98,7 @@ def create_vtg_message(u, v):
     
     # Append the checksum to the sentence
     final_sentence = append_checksum(nmea_sentence_without_dollar)
+    
     return final_sentence
 
 def create_rot_message(rate_of_turn):
@@ -116,5 +119,32 @@ def create_rot_message(rate_of_turn):
     
     # Append the checksum to the sentence
     final_sentence = append_checksum(nmea_sentence_without_dollar)
+    
     return final_sentence
 
+def create_mwv_message(wind_angle, wind_speed_mps):
+    """
+    Creates a MWV NMEA message for wind speed and angle relative to the vessel's heading.
+
+    :param wind_angle: Wind angle in degrees relative to the vessel's heading.
+    :param wind_speed_mps: Wind speed in meters per second.
+    :return: A string representing the MWV message with checksum.
+    """
+    # Conversion factor from meters per second to knots
+    mps_to_knots = 1.94384
+
+    # Convert wind speed to knots
+    wind_speed_knots = wind_speed_mps * mps_to_knots
+
+    # Reference is always 'R' for relative to the ship's heading
+    reference = 'R'
+    # Status 'A' means data is valid
+    status = 'A'
+
+    # Construct the MWV sentence without the initial '$' and without the checksum
+    nmea_sentence_without_dollar = f"GPWMV,{wind_angle:.2f},{reference},{wind_speed_knots:.2f},N,{status}"
+    
+    # Append the checksum to the sentence
+    final_sentence = append_checksum(nmea_sentence_without_dollar)
+    
+    return final_sentence

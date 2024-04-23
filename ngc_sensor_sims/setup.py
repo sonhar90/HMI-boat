@@ -22,6 +22,7 @@ setup(
 	'console_scripts': [
 		'gnss = ngc_sensor_sims.gnss:main',
 		'compass = ngc_sensor_sims.compass:main',
+		'anemometer = ngc_sensor_sims.anemometer:main',
 		],
 	},
 )
