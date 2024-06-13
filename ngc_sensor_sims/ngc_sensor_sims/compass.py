@@ -7,6 +7,7 @@ from ngc_interfaces.msg import Eta, Nu
 from ngc_utils.nmea_utils import create_hdt_message, create_rot_message
 import socket
 import math
+from ngc_utils.qos_profiles import default_qos_profile
 
 class CompassSimulator(Node):
     def __init__(self):
@@ -15,7 +16,7 @@ class CompassSimulator(Node):
 
         self.get_logger().info('Starting Heading sensor simulator')
 
-        # Parameters
+        # Parameters    
         self.declare_parameters(
             namespace='',
             parameters=[
@@ -55,8 +56,8 @@ class CompassSimulator(Node):
         self.timer = self.create_timer(1.0 / self.fix_frequency, self.timer_callback, callback_group=self.callback_group)
 
         # Create subscriptions for Eta and Nu messages
-        self.eta_subscription = self.create_subscription(Eta, 'eta_sim', self.eta_callback, 10, callback_group=self.callback_group)
-        self.nu_subscription = self.create_subscription(Nu, 'nu_sim', self.nu_callback, 10, callback_group=self.callback_group)
+        self.eta_subscription = self.create_subscription(Eta, 'eta_sim', self.eta_callback, default_qos_profile, callback_group=self.callback_group)
+        self.nu_subscription = self.create_subscription(Nu, 'nu_sim', self.nu_callback, default_qos_profile, callback_group=self.callback_group)
         
         # Initialize message variables
         self.latest_eta_msg = None

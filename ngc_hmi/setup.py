@@ -1,11 +1,11 @@
 from setuptools import find_packages, setup
 
-package_name = 'ngc_thruster_model'
+package_name = 'ngc_hmi'
 
 setup(
     name=package_name,
     version='0.0.0',
-    packages=find_packages(exclude=['test']),
+    packages=find_packages(include=['ngc_hmi', 'ngc_hmi.*']),
     data_files=[
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
@@ -13,13 +13,14 @@ setup(
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='nupix',
-    maintainer_email='nupix@todo.todo',
+    maintainer='oivind',
+    maintainer_email='oivindkjerstad@gmail.com',
     description='TODO: Package description',
     license='TODO: License declaration',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+            "ngc_hmi = ngc_hmi.ngc_hmi_main:main", 
         ],
     },
 )

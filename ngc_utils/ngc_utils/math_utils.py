@@ -1,6 +1,8 @@
 import math
 import numpy as np
 
+eps = 0.00000000001
+
 def mapToPiPi(angle_in_radians):
     # Wrap the angle to the range [-pi, pi]
     wrapped_angle = (angle_in_radians + math.pi) % (2 * math.pi) - math.pi
@@ -53,3 +55,11 @@ def skew_symetric_matrix(a):
         return np.array([[0, -a[2], a[1]],
                          [a[2], 0, -a[0]], 
                          [-a[1], a[0], 0]])
+
+def saturate(value, min, max):
+      if value >= max:
+            return max
+      elif value <= min:
+            return min
+      else:
+            return value

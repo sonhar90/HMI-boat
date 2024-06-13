@@ -8,6 +8,8 @@ from ngc_utils.geo_utils import add_body_frame_pos_to_lat_lon, add_distance_to_l
 from ngc_utils.nmea_utils import create_gga_message, create_vtg_message
 import socket
 import math
+from ngc_utils.qos_profiles import default_qos_profile
+import ngc_utils.math_utils as mu
 
 class GNSSSimulator(Node):
     def __init__(self):
@@ -62,8 +64,8 @@ class GNSSSimulator(Node):
         self.timer = self.create_timer(1.0 / self.fix_frequency, self.timer_callback, callback_group=self.callback_group)
 
         # Create subscriptions for Eta and Nu messages
-        self.eta_subscription = self.create_subscription(Eta, 'eta_sim', self.eta_callback, 10, callback_group=self.callback_group)
-        self.nu_subscription = self.create_subscription(Nu, 'nu_sim', self.nu_callback, 10, callback_group=self.callback_group)
+        self.eta_subscription = self.create_subscription(Eta, 'eta_sim', self.eta_callback, default_qos_profile, callback_group=self.callback_group)
+        self.nu_subscription = self.create_subscription(Nu, 'nu_sim', self.nu_callback, default_qos_profile, callback_group=self.callback_group)
         
         # Initialize message variables
         self.latest_eta_msg = None
@@ -105,12 +107,17 @@ class GNSSSimulator(Node):
             antenna_lat, antenna_lon = add_body_frame_pos_to_lat_lon(local_latest_eta_msg.lat, local_latest_eta_msg.lon, self.x_pos, self.y_pos, self.z_pos, math.degrees(local_latest_eta_msg.phi), math.degrees(local_latest_eta_msg.theta), math.degrees(local_latest_eta_msg.psi))
             noisy_lat, noisy_lon = add_distance_to_lat_lon(antenna_lat, antenna_lon, self.position_noise_state[0], self.position_noise_state[1])
 
+            # Rotate velocities to NED for COG calculation
+            nu_3_dof       = np.array([u_with_noise_and_movement,v_with_noise_and_movement,0.0])
+            R              = mu.RotationMatrix(0.0,0.0,local_latest_eta_msg.psi)
+            NED_velocities = R @ nu_3_dof
+
             # Generate and send GGA and VTG NMEA messages
             gga_message = create_gga_message(noisy_lat, noisy_lon)
-            vtg_message = create_vtg_message(u_with_noise_and_movement, v_with_noise_and_movement)
+            vtg_message = create_vtg_message(NED_velocities[0], NED_velocities[1])
             
             #self.get_logger().info(f'Sending GGA NMEA Message: "{gga_message}"\nSending VTG NMEA Message: "{vtg_message}"')
-            
+
             self.sock.sendto(gga_message.encode(), (self.udp_ip, self.udp_port))
             self.sock.sendto(vtg_message.encode(), (self.udp_ip, self.udp_port))
 

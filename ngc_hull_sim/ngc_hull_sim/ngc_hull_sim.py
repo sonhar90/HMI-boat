@@ -5,17 +5,19 @@ from rclpy.node import Node
 import numpy as np
 from builtin_interfaces.msg import Time
 from ngc_interfaces.msg import Eta, Nu, NuDot, Tau, Wind
-from ngc_utils.geo_utils import add_distance_to_lat_lon, calculate_distance_north_east
+from ngc_utils.geo_utils import add_distance_to_lat_lon
 import yaml
 import os
 from ament_index_python.packages import get_package_share_directory
 from ngc_utils.vessel_model import VesselModel
 import math
 import ngc_utils.math_utils as mu
+from ngc_utils.qos_profiles import default_qos_profile
+import time
 
-class Simulator(Node):
+class HullSimulator(Node):
     def __init__(self):
-        super().__init__('ngc_vessel_simulator')
+        super().__init__('ngc_hull_simulator')
         self.declare_parameter('yaml_package_name', 'ngc_bringup')
         self.declare_parameter('vessel_config_file', 'config/vessel_config.yaml')
         self.declare_parameter('simulation_config_file', 'config/simulator_config.yaml')
@@ -31,17 +33,18 @@ class Simulator(Node):
         simulation_config = self.load_yaml_file(simulation_config_path)
 
         self.vessel_model = VesselModel(vessel_config)  # Initialize the vessel model
-        self.vessel_model.set_physical_parameters(simulation_config['physical_parameter'])
+        self.vessel_model.set_physical_parameters(simulation_config['physical_parameters'])
         self.vessel_model.display_info()
 
         self.get_logger().info("Configuration files loaded.")
 
         # Set up the input and output data
-        self.eta_pub        = self.create_publisher(Eta, "eta_sim", 1)
-        self.nu_pub         = self.create_publisher(Nu, "nu_sim", 1)
-        self.nu_dot_pub     = self.create_publisher(NuDot, "nu_dot_sim", 1)
-        self.wind_pub       = self.create_publisher(Wind, "wind_sim", 1)
-        self.tau_sub        = self.create_subscription(Tau, "tau_prop",  self.force_cmd_callback, 10)
+        self.eta_pub        = self.create_publisher(Eta, "eta_sim", default_qos_profile)
+        self.nu_pub         = self.create_publisher(Nu, "nu_sim", default_qos_profile)
+        self.nu_dot_pub     = self.create_publisher(NuDot, "nu_dot_sim", default_qos_profile)
+        self.wind_pub       = self.create_publisher(Wind, "wind_sim", default_qos_profile)
+        
+        self.tau_sub        = self.create_subscription(Tau, "tau_propulsion",  self.force_cmd_callback, default_qos_profile)
         self.tau            = Tau()
 
         # Setup inital values of the simlator
@@ -67,6 +70,10 @@ class Simulator(Node):
         self.step_size = simulation_config['simulation_settings']['step_size']
         self.timer     = self.create_timer(self.step_size, self.step_simulation)
 
+        # Setup timing variable for monitoring
+        self.prev_run_time = time.perf_counter()
+        self.run_dt        = 0.0
+
         self.get_logger().info("Setup finished.")
 
     def load_yaml_file(self, file_path):
@@ -78,6 +85,10 @@ class Simulator(Node):
 
     def step_simulation(self):
         
+        time_now = time.perf_counter()
+        self.run_dt = time_now - self.prev_run_time
+        self.prev_run_time = time_now
+
         # Setup the output topic messages
         eta_message    = Eta()
         nu_message     = Nu()
@@ -100,7 +111,7 @@ class Simulator(Node):
         M_inv = self.vessel_model.MassInv6Dof
 
         # Compute the velocity derivative and integrate
-        self.nu_dot = M_inv @ (- tau_coreolis_centripital + tau_propulsion + tau_damping - tau_restoring + tau_wind)
+        self.nu_dot = M_inv @ (- 0*tau_coreolis_centripital + tau_propulsion + tau_damping - tau_restoring + 0*tau_wind)
         self.nu += self.step_size*self.nu_dot
 
         # Reset north and east positions in order to get the differential from last timestep
@@ -129,6 +140,9 @@ class Simulator(Node):
 
         wind_message.direction_relative_deg = relative_wind_direction
         wind_message.magnitude_ms           = relative_wind_speed
+
+        # TEMP for monitoring
+        eta_message.z = self.run_dt
 
         # Publish the data
         self.eta_pub.publish(eta_message)
@@ -165,7 +179,7 @@ class Simulator(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    simulation_node = Simulator()
+    simulation_node = HullSimulator()
     rclpy.spin(simulation_node)
     simulation_node.destroy_node()
     rclpy.shutdown()

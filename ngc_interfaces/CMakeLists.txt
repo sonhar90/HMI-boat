@@ -15,6 +15,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
 "msg/NuDot.msg"
 "msg/Tau.msg"
 "msg/Wind.msg"
+"msg/ThrusterSignals.msg"
 )
 
 ament_export_dependencies(rosidl_default_runtime)
