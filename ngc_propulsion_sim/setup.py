@@ -1,6 +1,6 @@
 from setuptools import find_packages, setup
 
-package_name = 'ngc_sim'
+package_name = 'ngc_propulsion_sim'
 
 setup(
     name=package_name,
@@ -14,14 +14,13 @@ setup(
     install_requires=['setuptools'],
     zip_safe=True,
     maintainer='nupix',
-    maintainer_email='nupix@todo.todo',
+    maintainer_email='aksel.t.frafjord@ntnu.no',
     description='TODO: Package description',
     license='TODO: License declaration',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            "simulate = ngc_sim.ngc_sim:main", 
-            "manual_control = ngc_sim.manual_control:main"
+            "ngc_propulsion_sim = ngc_propulsion_sim.ngc_propulsion_sim:main"
         ],
     },
 )

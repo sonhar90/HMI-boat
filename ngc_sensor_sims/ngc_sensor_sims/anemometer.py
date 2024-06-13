@@ -8,6 +8,7 @@ from ngc_utils.nmea_utils import create_mwv_message
 import socket
 import math
 import ngc_utils.math_utils as mu
+from ngc_utils.qos_profiles import default_qos_profile
 
 class AnemometerSimulator(Node):
     def __init__(self):
@@ -62,8 +63,8 @@ class AnemometerSimulator(Node):
         self.timer = self.create_timer(1.0 / self.fix_frequency, self.timer_callback, callback_group=self.callback_group)
 
         # Create subscriptions for Eta and Nu messages
-        self.nu_subscription = self.create_subscription(Nu, 'nu_sim', self.nu_callback, 10, callback_group=self.callback_group)
-        self.wind_subscription = self.create_subscription(Wind, 'wind_sim', self.wind_callback, 10, callback_group=self.callback_group)
+        self.nu_subscription = self.create_subscription(Nu, 'nu_sim', self.nu_callback, default_qos_profile, callback_group=self.callback_group)
+        self.wind_subscription = self.create_subscription(Wind, 'wind_sim', self.wind_callback, default_qos_profile, callback_group=self.callback_group)
         
         # Initialize message variables
         self.latest_nu_msg   = None

@@ -1,13 +1,13 @@
 vessel:
-  name: 'Arbeidsbaaten'
+  name: 'FF Innovator'
   
   dimensions:
     length: 13
-    width: 3.6
+    width: 3.7
     draft: 0.9
     r_g: [0.0,0.0,0.0]                  # Location center of gravity (CG) relative to center of origin (CO) to the bodyfram {b} 
   
-  mass: 20000.0
+  mass: 23000.0
   
   second_moment_of_inertia:             # inertia dyadics coefficient needed to compute Ig
       R44: 1.4                          # radius of gyration in roll (~0.4 *B)
@@ -29,9 +29,9 @@ vessel:
       X_ur: 0.0
       X_uv: 0.0
     linear_damping:
-      Z_w: 1.0                           # heave damping term
-      K_p: 1.0                           # roll damping term
-      M_q: 1.0                           # pitch damping term  
+      Z_w: 10.0                           # heave damping term
+      K_p: 10.0                           # roll damping term
+      M_q: 10.0                           # pitch damping term  
   
   hydrostatic_coefficients:
     A_wp: 21.0                          # waterplane area
@@ -46,71 +46,3 @@ vessel:
     C_N: [0.0, 0.10, 0.15, 0.12, 0.05, 0.0, -0.05, -0.09, -0.05, 0.0]
     A_frontal: 14
     A_lateral: 45
-
-
-
-#arbeidsbaat1:
-  #ngc_sim:
-  #/**: #wild card syntax works for all node names and namespaces (this way you can launch several identical vessels with different namespaces, based on thies paramater-file)
-  #  ros__parameters: # (data type) description
-      
-   
-
-
-      
-
-      #hydrostatic--> restoring coefficients/spring stifness - > resulting in the spring stiffnes matrix G
-      
-          
-      
-      
-      #Linear damping terms
-      #Xu: 0.0 #130.0         #(double) surge linear damping term 
-      #Xr: 1.0        #(double) damping element between surge and yaw
-     # Yv: 20000.0         #(double) sway damping term
-      
-      #Nr: 20000.0        #(double) yaw damping term
-      #Nu: 1.0         #(double) damping element between surge and yaw
-      #""" D = np.diag([
-      #      self.M[0][0] / self.T_surge,
-      #      self.M[1][1] / self.T_sway,
-      #      self.M[2][2] / self.T_heave,
-      #      self.M[3][3] * 2 * self.zeta_roll  * self.w_roll,
-      #      self.M[4][4] * 2 * self.zeta_pitch * self.w_pitch,
-      #      self.M[5][5] / self.T_yaw
-      #      ])"""
-      #Non-linear damping terms
-      #second order (quadratic) damping terms
-      
-
-
-
-      #Nonlinear modeling considering the ship as a wing, Andrew Ross 2008: https://ntnuopen.ntnu.no/ntnu-xmlui/handle/11250/259440
-      #XLD: eq. 4.76, p. 95
-
-      
-      #Xvv: 1.0
-      #Xurr: 0.0 #1.0
-      #Xrv: 1.0
-      #Xuvv: 1.0
-      #Xrvu: 1.0       #(double) 
-      #Xurr: 1.0
-      #Nuur: 0.0 #0.1
-
-      #Nur: 0.0 #0.2
-
-      
-      #modeling the changes in lift and drag with respect to roll see. chap 4.4
-      #dXLD: eq. 4.74, p.94
-      #Xvvphiphi: 0.0 #(double)
-      #Xvrphiphi: 0.0 #(double)
-      #Xrrphiphi: 0.0 #(double)  
-
-      #YLD: eq. 4.31 p.85
-      
-      
-
-      
-      #dYLD: eq. 4.75, p.94
-      #Yuvphiphi: 0.0
-      #Yurphipi: 0.0
