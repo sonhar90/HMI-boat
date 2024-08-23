@@ -5,6 +5,7 @@ import math
 from ament_index_python.packages import get_package_share_directory
 from ngc_utils.thruster_models import AzimuthThruster, PropellerRudderUnit, TunnelThruster
 import ngc_utils.thruster_objects_loader as tl
+from ngc_interfaces.msg import ThrusterSignals
 import rclpy
 
 class PropulsionModel:
@@ -48,7 +49,8 @@ class PropulsionModel:
                 if thruster.propeller.type == 'cpp':
                     thruster.propeller.pitch += self.step_size * (1.0 / thruster.propeller.pitch_time_constant) * (thruster.setpoints.pitch - thruster.propeller.pitch)
                 if thruster.type == 'propeller_with_rudder':
-                    thruster.rudder_angle_rad += self.step_size * (1.0 / thruster.rudder_time_constant) * (math.radians(thruster.setpoints.azimuth_deg) - thruster.rudder_angle_rad)
+                    if thruster.has_rudder:
+                        thruster.rudder_angle_rad += self.step_size * (1.0 / thruster.rudder_time_constant) * (math.radians(thruster.setpoints.azimuth_deg) - thruster.rudder_angle_rad)
                 if thruster.type == 'azimuth_thruster':
                     thruster.rudder_angle_rad += self.step_size * (1.0 / thruster.azimuth_time_constant) * (math.radians(thruster.setpoints.azimuth_deg) - thruster.azimuth_angle_rad)
 
@@ -72,7 +74,7 @@ class PropulsionModel:
             else:
                 thruster_feedback_message.azimuth_deg = 0.0
 
-            self.node.get_publisher(f"thruster_{thruster.id}_feedback").publish(thruster_feedback_message)
+            self.node.thruster_publishers[thruster.id].publish(thruster_feedback_message)
 
             T_vector_x = np.array([1.0, 0.0, 0.0, thruster.position[2], -thruster.position[1]]).reshape(5, 1)
             T_vector_y = np.array([0.0, 1.0, -thruster.position[2], 0.0, thruster.position[0]]).reshape(5, 1)

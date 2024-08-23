@@ -2,79 +2,29 @@
 
 main_propulsion_1:
   id: 1
-  position: [-5.5,-1,0.7]                   # the position of the thruster form CO (the forces are poisitve in the direction according to the SNAME-notation)
+  position: [-1,-0.5,0.3]                   # the position of the thruster form CO (the forces are poisitve in the direction according to the SNAME-notation)
   type: propeller_with_rudder               # (str) [propeller_fixed, propeller_variable_rudder
   propeller:
-    type: cpp
-    Kt0: 0.6  
-    diameter: 0.4                       # the prop diameter in meters
-    max_rpm: 1750
+    type: fpp
+    Kt0: 0.55  
+    diameter: 0.2                           # the prop diameter in meters
+    max_rpm: 2000
     min_rpm: 0
-    max_pitch: 1.4
-    min_pitch: -1.0
-    rpm_time_constant: 1.5
+    rpm_time_constant: 0.3
     pitch_time_constant: 0.5
     wake_factor: 0.05
-  rudder:
-    height: 0.4                             # the rudder height in meters
-    width: 0.2                              # Average width
-    max_rudder_angle_deg: 45
-    stall_angle_deg: 35
-    CL_stall: 1.2
-    CD_zero_deg: 0.01
-    prop_to_rudder_distance: 0.2            # distance from center of propeller to center of lift to rudder
-    rudder_time_constant: 0.3               # sec
 
 main_propulsion_2:
   id: 2
-  position: [-5.5,1,0.7]                    # the position of the thruster form CO (the forces are poisitve in the direction according to the SNAME-notation)
+  position: [-1,0.5,0.3]                    # the position of the thruster form CO (the forces are poisitve in the direction according to the SNAME-notation)
   type: propeller_with_rudder               # (str) [propeller_fixed, propeller_variable_rudder]
   propeller:
-    type: cpp
-    Kt0: 0.6  
-    diameter: 0.4                        # the prop diameter in meters
-    max_rpm: 1750
+    type: fpp
+    Kt0: 0.55 
+    diameter: 0.2                           # the prop diameter in meters
+    max_rpm: 2000
     min_rpm: 0
-    max_pitch: 1.4
-    min_pitch: -1.0
-    rpm_time_constant: 1.5
+    rpm_time_constant: 0.3
     pitch_time_constant: 0.5
     wake_factor: 0.05
-  rudder:
-    height: 0.4                             # the rudder height in meters
-    width: 0.2                              # Average width
-    max_rudder_angle_deg: 45
-    stall_angle_deg: 35
-    CL_stall: 1.2
-    CD_zero_deg: 0.01
-    prop_to_rudder_distance: 0.2            # distance from center of propeller to center of lift to rudder
-    rudder_time_constant: 0.3               # sec
 
-
-aux_propulsion_1:
-  id: 3
-  position: [5,0,0.6]                       # the position of the thruster form CO (the forces are poisitve in the direction according to the SNAME-notation)
-  type: tunnel_thruster                     # (str) [propeller_fixed, propeller_variable_rudder]
-  propeller:
-    type: fpp
-    Kt0: 0.5  
-    diameter: 0.15                       # the prop diameter in meters
-    max_rpm: 2000
-    min_rpm: -2000
-    rpm_time_constant: 3.0
-    pitch_time_constant: 0.3
-    wake_factor: 0.05
-
-aux_propulsion_2:
-  id: 4
-  position: [-6,0,0.6]                       # the position of the thruster form CO (the forces are poisitve in the direction according to the SNAME-notation)
-  type: tunnel_thruster                     # (str) [propeller_fixed, propeller_variable_rudder]
-  propeller:
-    type: fpp
-    Kt0: 0.5  
-    diameter: 0.15                        # the prop diameter in meters
-    max_rpm: 2000
-    min_rpm: -2000
-    rpm_time_constant: 3.0
-    pitch_time_constant: 0.3
-    wake_factor: 0.05

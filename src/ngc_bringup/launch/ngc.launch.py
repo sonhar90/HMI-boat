@@ -79,5 +79,5 @@ def generate_launch_description():
     ld.add_action(anemometer_node)
     ld.add_action(propulsion_node)
     ld.add_action(hmi_node)
-    ld.add_action(delayed_plotjuggler)
+    #ld.add_action(delayed_plotjuggler)
     return ld

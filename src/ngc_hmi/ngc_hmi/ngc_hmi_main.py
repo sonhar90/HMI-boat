@@ -68,7 +68,8 @@ class HMI(Node):
 
             self.add_slider_layout(thruster, thruster.propeller.min_rpm, thruster.propeller.max_rpm, 'RPM', self.update_thruster_rpm, form_layout)
             if hasattr(thruster, 'rudder_angle_rad'):
-                self.add_slider_layout(thruster, -thruster.max_rudder_angle_deg, thruster.max_rudder_angle_deg, 'Rudder', self.update_thruster_azimuth, form_layout)
+                if thruster.has_rudder:
+                    self.add_slider_layout(thruster, -thruster.max_rudder_angle_deg, thruster.max_rudder_angle_deg, 'Rudder', self.update_thruster_azimuth, form_layout)
             if hasattr(thruster, 'azimuth_angle_rad'):
                 self.add_slider_layout(thruster, -180, 180, 'Azimuth', self.update_thruster_azimuth, form_layout)
             if hasattr(thruster.propeller, 'pitch'):

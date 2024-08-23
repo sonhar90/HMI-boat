@@ -1,31 +1,31 @@
 vessel:
-  name: 'FF Innovator'
+  name: 'The Otter USV'
   
   dimensions:
-    length: 13
-    width: 3.7
-    draft: 0.9
+    length: 2
+    width: 1.08
+    draft: 0.15
     r_g: [0.0,0.0,0.0]                  # Location center of gravity (CG) relative to center of origin (CO) to the bodyfram {b} 
   
-  mass: 23000.0
+  mass: 62.0                            # kg
   
   second_moment_of_inertia:             # inertia dyadics coefficient needed to compute Ig
-      R44: 1.4                          # radius of gyration in roll (~0.4 *B)
-      R55: 3.5                          # radius of gyration in pitch(~0.25*L)
-      R66: 3.5                          # radius of gyration in yaw (~0.25*L)
+      R44: 0.4                          # radius of gyration in roll (~0.4 *B)
+      R55: 0.5                          # radius of gyration in pitch(~0.25*L)
+      R66: 0.5                          # radius of gyration in yaw (~0.25*L)
   
   payload: 0.0
   
   hydrodynamic_coefficients:
     added_mass:                         # Added mass terms derived by assuming the ship hull to be an elipsioid
-      X_udot: 3025.0                    # 2030.0 #  aka. A11 = 2.7 *roh *nabla^(5/3) /L²  -- the approximation function of Snöding (1982)
-      Y_vdot: 12500.0                   # Considering the hull as an Ellipsiod (source:Determination of Added Mass and Inertia Moment of Marine Ships Moving in 6 Degrees of Freedom DOI: 10.11648/j.ijtet.20160201.12 )
+      X_udot: 5                         # 2030.0 #  aka. A11 = 2.7 *roh *nabla^(5/3) /L²  -- the approximation function of Snöding (1982)
+      Y_vdot: 10                        # Considering the hull as an Ellipsiod (source:Determination of Added Mass and Inertia Moment of Marine Ships Moving in 6 Degrees of Freedom DOI: 10.11648/j.ijtet.20160201.12 )
       Z_wdot: 0.0                       # 16628.0    # --"--
       K_pdot: 0.0                       # 8361.0     # 1.7* m *R66² (from Fossen vehicle sim)
-      M_qdot: 3232.0                    # 83196.0    # Based on a elipsoid added mass as above
-      N_rdot: 3235.0                    # 84833.0    # -pi(T/L)² *[1/12 + 0,017 CB * B/T - 0,33 (B/L)]      (eq. 4.12)
+      M_qdot: 15                        # 83196.0    # Based on a elipsoid added mass as above
+      N_rdot: 15                        # 84833.0    # -pi(T/L)² *[1/12 + 0,017 CB * B/T - 0,33 (B/L)]      (eq. 4.12)
     nonlinear_damping:
-      X_uu: 130.0
+      X_uu: 100.0
       X_ur: 0.0
       X_uv: 0.0
     linear_damping:
@@ -34,9 +34,9 @@ vessel:
       M_q: 10.0                           # pitch damping term  
   
   hydrostatic_coefficients:
-    A_wp: 21.0                          # waterplane area
-    GM_T: 1.2                           # transverse metacentric heights - approximated with GMT = B^2 /(12 * draft)
-    GM_L: 20.8                          # longtitudinal metacentric height  - approximated with GML = L^2 /(12 * draft)
+    A_wp: 1.5                             # waterplane area
+    GM_T: 0.55                            # transverse metacentric heights - approximated with GMT = B^2 /(12 * draft)
+    GM_L: 2.2                             # longtitudinal metacentric height  - approximated with GML = L^2 /(12 * draft)
    
   aerodynamic_coefficients:
     relative_directions: [0, 20, 40, 60, 80, 100, 120, 140, 160, 180]
@@ -44,5 +44,5 @@ vessel:
     C_Y: [0.0, 0.4, 0.8, 0.9, 0.8, 0.8, 0.8, 0.6, 0.2, 0.0]
     C_K: [0.0, 0.3, 0.7, 0.8, 0.7, 0.7, 0.7, 0.5, 0.1, 0.0]
     C_N: [0.0, 0.10, 0.15, 0.12, 0.05, 0.0, -0.05, -0.09, -0.05, 0.0]
-    A_frontal: 14
-    A_lateral: 45
+    A_frontal: 0.25
+    A_lateral: 0.45

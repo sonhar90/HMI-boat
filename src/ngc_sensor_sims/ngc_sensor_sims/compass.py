@@ -72,21 +72,22 @@ class CompassSimulator(Node):
         self.latest_nu_msg = msg
 
     def update_noise_model(self):
+        
         # Simple position noise model
-        self.heading_noise_state = np.random.normal(0, self.position_std_dev, 1)
-        self.rot_noise_state = np.random.normal(0, self.rot_noise_state, 1)
+        self.heading_noise_state = np.random.normal(0, self.position_std_dev, 1)[0]
+        self.rot_noise_state = np.random.normal(0, self.velocity_std_dev, 1)[0]
+
 
     def timer_callback(self):
-
-        # Make local copies to avoide the object chaning during routine
+        
+        # Make local copies to avoid the object changing during routine
         local_latest_eta_msg = self.latest_eta_msg
         local_latest_nu_msg = self.latest_nu_msg
 
         if (local_latest_eta_msg is not None) and (local_latest_nu_msg is not None):
-            
             # Generate and send HDT and ROT NMEA messages
-            hdt_message = create_hdt_message(math.degrees(local_latest_eta_msg.psi) + self.heading_noise_state[0])
-            rot_message = create_rot_message((math.degrees(local_latest_nu_msg.r) + self.rot_noise_state[0])/60.0)
+            hdt_message = create_hdt_message(math.degrees(local_latest_eta_msg.psi) + self.heading_noise_state)
+            rot_message = create_rot_message((math.degrees(local_latest_nu_msg.r) + self.rot_noise_state) / 60.0)
             
             #self.get_logger().info(f'Sending HDT NMEA Message: "{hdt_message}"\nSending ROT NMEA Message: "{hdt_message}"')
             
@@ -95,6 +96,7 @@ class CompassSimulator(Node):
 
             local_latest_eta_msg = None
             local_latest_nu_msg = None
+
 
 def main(args=None):
     rclpy.init(args=args)
