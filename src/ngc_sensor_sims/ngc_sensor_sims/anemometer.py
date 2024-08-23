@@ -80,8 +80,8 @@ class AnemometerSimulator(Node):
 
     def update_noise_model(self):
         # Simple position noise model
-        self.direction_deg_noise_state = np.random.normal(0, self.direction_deg_std_dev, 1)
-        self.magnitude_ms_noise_state = np.random.normal(0, self.magnitude_ms_noise_state, 1)
+        self.direction_deg_noise_state = np.random.normal(0, self.direction_deg_std_dev)
+        self.magnitude_ms_noise_state = np.random.normal(0, self.magnitude_ms_noise_state)
 
     def timer_callback(self):
 
@@ -100,7 +100,7 @@ class AnemometerSimulator(Node):
             relative_wind_speed     = np.sqrt(u_rw**2 + v_rw**2)
 
             # Generate and send MWV NMEA messages
-            mwv_message = create_mwv_message(relative_wind_direction + self.direction_deg_noise_state[0],relative_wind_speed + self.magnitude_ms_noise_state[0])
+            mwv_message = create_mwv_message(relative_wind_direction + self.direction_deg_noise_state, relative_wind_speed + self.magnitude_ms_noise_state)
             
             #self.get_logger().info(f'Sending HDT NMEA Message: "{hdt_message}"\nSending ROT NMEA Message: "{hdt_message}"')
             
