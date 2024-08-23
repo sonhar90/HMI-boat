@@ -20,8 +20,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            "simulate = ngc_hull_sim.ngc_hull_sim:main", 
-            "manual_control = ngc_hull_sim.manual_control:main"
+            "simulate = ngc_hull_sim.ngc_hull_sim:main"
         ],
     },
 )

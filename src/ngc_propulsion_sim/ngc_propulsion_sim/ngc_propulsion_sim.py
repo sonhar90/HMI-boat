@@ -33,13 +33,15 @@ class PropulsionSimulator(Node):
 
     def step_simulation(self):
         tau = self.propulsion_model.step_simulation(self.nu)
+        
         tau_message = Tau()
         tau_message.surge_x = float(tau[0])
-        tau_message.sway_y = float(tau[1])
+        tau_message.sway_y  = float(tau[1])
         tau_message.heave_z = 0.0
-        tau_message.roll_k = float(tau[2])
+        tau_message.roll_k  = float(tau[2])
         tau_message.pitch_m = float(tau[3])
-        tau_message.yaw_n = float(tau[4])
+        tau_message.yaw_n   = float(tau[4])
+        
         self.tau_pub.publish(tau_message)
 
     def create_thruster_callback(self, thruster):
