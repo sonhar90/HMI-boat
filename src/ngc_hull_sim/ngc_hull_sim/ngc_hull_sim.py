@@ -111,7 +111,7 @@ class HullSimulator(Node):
         M_inv = self.vessel_model.MassInv6Dof
 
         # Compute the velocity derivative and integrate
-        self.nu_dot = M_inv @ (- 0*tau_coreolis_centripital + tau_propulsion + tau_damping - tau_restoring + 0*tau_wind)
+        self.nu_dot = M_inv @ (- 0*tau_coreolis_centripital + tau_propulsion + tau_damping - tau_restoring + tau_wind)
         self.nu += self.step_size*self.nu_dot
 
         # Reset north and east positions in order to get the differential from last timestep

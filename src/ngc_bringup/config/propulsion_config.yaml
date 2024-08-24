@@ -9,7 +9,7 @@ main_propulsion_1:
     Kt0: 0.55  
     diameter: 0.2                           # the prop diameter in meters
     max_rpm: 2000
-    min_rpm: 0
+    min_rpm: -2000
     rpm_time_constant: 0.3
     pitch_time_constant: 0.5
     wake_factor: 0.05
@@ -23,7 +23,7 @@ main_propulsion_2:
     Kt0: 0.55 
     diameter: 0.2                           # the prop diameter in meters
     max_rpm: 2000
-    min_rpm: 0
+    min_rpm: -2000
     rpm_time_constant: 0.3
     pitch_time_constant: 0.5
     wake_factor: 0.05

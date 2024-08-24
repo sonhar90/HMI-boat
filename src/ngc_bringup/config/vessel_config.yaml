@@ -4,7 +4,7 @@ vessel:
   dimensions:
     length: 2
     width: 1.08
-    draft: 0.15
+    draft: 0.5
     r_g: [0.0,0.0,0.0]                  # Location center of gravity (CG) relative to center of origin (CO) to the bodyfram {b} 
   
   mass: 62.0                            # kg
