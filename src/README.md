@@ -1,1 +1,1 @@
-# NextGenControls simulator package
+# Otter simulator package
