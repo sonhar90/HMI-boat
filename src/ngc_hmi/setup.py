@@ -21,6 +21,7 @@ setup(
     entry_points={
         'console_scripts': [
             "ngc_hmi = ngc_hmi.ngc_hmi_main:main", 
+            "ngc_hmi_autopilot = ngc_hmi.ngc_hmi_autopilot:main", 
         ],
     },
 )

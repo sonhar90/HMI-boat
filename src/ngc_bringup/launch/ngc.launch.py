@@ -63,6 +63,13 @@ def generate_launch_description():
         output     = 'screen'
     )
 
+    hmi_node_autopilot = Node(
+        package     = "ngc_hmi", 
+        executable  = "ngc_hmi_autopilot",
+        name        = 'hmi_ap',
+        output     = 'screen'
+    )
+
     plotjuggler_node = Node(
         package    = "plotjuggler", 
         executable = "plotjuggler",
@@ -79,5 +86,6 @@ def generate_launch_description():
     ld.add_action(anemometer_node)
     ld.add_action(propulsion_node)
     ld.add_action(hmi_node)
-    ld.add_action(delayed_plotjuggler)
+    ld.add_action(hmi_node_autopilot)
+    #ld.add_action(delayed_plotjuggler)
     return ld
