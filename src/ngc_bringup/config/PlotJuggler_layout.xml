@@ -3,26 +3,26 @@
  <tabbed_widget name="Main Window" parent="main_window">
   <Tab containers="1" tab_name="Tab1">
    <Container>
-    <DockSplitter count="3" orientation="-" sizes="0.333333;0.333333;0.333333">
+    <DockSplitter count="3" sizes="0.333333;0.333333;0.333333" orientation="-">
      <DockArea name="...">
-      <plot flip_x="false" flip_y="false" mode="TimeSeries" style="Lines">
-       <range left="243.500116" top="2.061606" right="252.261175" bottom="1.704018"/>
+      <plot flip_y="false" mode="TimeSeries" flip_x="false" style="Lines">
+       <range bottom="-0.000488" top="0.008951" right="11.135827" left="0.000000"/>
        <limitY/>
        <curve color="#1f77b4" name="/eta_setpoint/psi"/>
        <curve color="#d62728" name="/eta_sim/psi"/>
       </plot>
      </DockArea>
      <DockArea name="...">
-      <plot flip_x="false" flip_y="false" mode="TimeSeries" style="Lines">
-       <range left="243.500116" top="2.881204" right="252.261175" bottom="2.880879"/>
+      <plot flip_y="false" mode="TimeSeries" flip_x="false" style="Lines">
+       <range bottom="-0.000001" top="0.000026" right="11.135827" left="0.000000"/>
        <limitY/>
        <curve color="#1ac938" name="/nu_setpoint/u"/>
        <curve color="#ff7f0e" name="/nu_sim/u"/>
       </plot>
      </DockArea>
      <DockArea name="...">
-      <plot flip_x="false" flip_y="false" mode="TimeSeries" style="Lines">
-       <range left="243.500116" top="851.540504" right="252.261175" bottom="-21.127476"/>
+      <plot flip_y="false" mode="TimeSeries" flip_x="false" style="Lines">
+       <range bottom="-0.100000" top="0.100000" right="11.135827" left="0.000000"/>
        <limitY/>
        <curve color="#f14cc1" name="/tau_propulsion/surge_x"/>
        <curve color="#9467bd" name="/tau_propulsion/yaw_n"/>
