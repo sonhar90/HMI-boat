@@ -1,19 +1,22 @@
 import sys
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QFormLayout, QHBoxLayout, QPushButton, QLabel, QSpacerItem, QSizePolicy, QLCDNumber, QDial
+import signal
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QFormLayout, QHBoxLayout, QPushButton, QLabel, QSpacerItem, QSizePolicy, QLCDNumber, QDial, QSlider
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QFont
 import rclpy
 from rclpy.node import Node
 from ngc_interfaces.msg import Eta, Nu
-from PyQt5.QtWidgets import QSlider
 from ngc_utils.qos_profiles import default_qos_profile
+import numpy as np
+import ngc_utils.math_utils as mu
 
 class AutopilotHMI(Node):
     def __init__(self):
         super().__init__('ship_autopilot_hmi')
 
-        # Initialize the previous heading value
-        self.previous_heading_value = 0
+        # Initialize setpoints
+        self.heading_setpoint = 0.5  # Initial heading setpoint
+        self.surge_setpoint   = 0.0  # Initial surge speed setpoint in knots
 
         # Subscribers to eta_sim and nu_sim
         self.create_subscription(Eta, 'eta_sim', self.update_eta_feedback, default_qos_profile)
@@ -41,15 +44,17 @@ class AutopilotHMI(Node):
         self.window.setLayout(self.layout)
         self.window.show()
 
-        # Process ROS 2 callbacks regularly
+        # Timer to process ROS 2 callbacks and publish setpoints regularly
         self.timer = QTimer()
-        self.timer.timeout.connect(self.ros_spin)
-        self.timer.start(100)  # 100 ms interval
+        self.timer.timeout.connect(self.ros_spin_and_publish_setpoints)
+        self.timer.start(100)  # 100 ms interval (10 Hz)
 
-        sys.exit(self.app.exec_())
-
-    def ros_spin(self):
+    def ros_spin_and_publish_setpoints(self):
+        # Spin ROS 2 callbacks to handle incoming messages
         rclpy.spin_once(self, timeout_sec=0.1)
+
+        # Publish the current setpoints regularly
+        self.publish_setpoints()
 
     def add_wheel_layout(self, label_text, min_val, max_val, unit, update_method):
         wheel_layout = QVBoxLayout()
@@ -62,7 +67,7 @@ class AutopilotHMI(Node):
         dial.setMinimum(min_val)
         dial.setMaximum(max_val)
         dial.setWrapping(True)  # Enable wrapping to allow continuous rotation
-        dial.setValue(180)  # Start at 90 degrees so that the indicator points up and maps to 0 degrees
+        dial.setValue(180)  # Start at 180 degrees (which maps to north)
         dial.setNotchesVisible(True)
         dial.valueChanged.connect(lambda value: self.handle_heading_wraparound(self.remap_dial_value(value), update_method))
         wheel_layout.addWidget(dial)
@@ -77,7 +82,7 @@ class AutopilotHMI(Node):
         self.layout.addItem(QSpacerItem(20, 20, QSizePolicy.Minimum, QSizePolicy.Expanding))
 
     def remap_dial_value(self, value):
-        # Remap the dial so that 90 is 0 degrees (top), 180 is 90 degrees (right), 270 is 180 degrees (bottom), and 0 is 270 degrees (left)
+        # Remap the dial so that 0 at the top is north (0°)
         remapped_value = (value - 180) % 360
         return remapped_value
 
@@ -108,7 +113,6 @@ class AutopilotHMI(Node):
         self.layout.addItem(QSpacerItem(20, 20, QSizePolicy.Minimum, QSizePolicy.Expanding))
 
     def handle_heading_wraparound(self, current_value, update_method):
-        
         update_method(current_value)
 
     def update_eta_feedback(self, msg):
@@ -120,24 +124,48 @@ class AutopilotHMI(Node):
         pass  # Visualization of the feedback can be added here
 
     def update_heading_setpoint(self, value):
-        eta_msg = Eta()
-        eta_msg.psi = float(value)
-        self.eta_publisher.publish(eta_msg)
-        self.get_logger().info(f'Published heading setpoint: {value}°')
+        # Update the heading setpoint value
+        self.heading_setpoint = value
 
     def update_surge_setpoint(self, value):
-        # Convert knots to m/s (1 knot = 0.514444 m/s)
-        value_mps = float(value) * 0.514444
+        # Update the surge speed setpoint value (knots)
+        self.surge_setpoint = value
+
+    def publish_setpoints(self):
+        # Convert heading to radians and publish Eta setpoint
+        eta_msg = Eta()
+        eta_msg.psi = float(mu.mapToPiPi(np.deg2rad(self.heading_setpoint)))  # Convert degrees to radians and map 2 plus minus pi
+        self.eta_publisher.publish(eta_msg)
+
+        # Convert surge speed from knots to meters per second (1 knot = 0.514444 m/s)
         nu_msg = Nu()
-        nu_msg.u = value_mps
+        nu_msg.u = float(self.surge_setpoint) * 0.514444
         self.nu_publisher.publish(nu_msg)
-        self.get_logger().info(f'Published surge speed setpoint: {value} knots ({value_mps:.2f} m/s)')
+
 
 def main(args=None):
     rclpy.init(args=args)
+
+    # Create the AutopilotHMI node
     autopilot_hmi = AutopilotHMI()
-    rclpy.spin(autopilot_hmi)
-    rclpy.shutdown()
+
+    # Set up a QTimer to spin the ROS2 node and handle callbacks
+    timer = QTimer()
+    timer.timeout.connect(lambda: rclpy.spin_once(autopilot_hmi, timeout_sec=0.1))
+    timer.start(100)  # Call every 100 ms
+
+    # Handle signal for graceful shutdown
+    def signal_handler(sig, frame):
+        print("SIGINT received, shutting down...")
+        autopilot_hmi.destroy_node()
+        rclpy.shutdown()
+        QApplication.quit()
+
+    signal.signal(signal.SIGINT, signal_handler)
+
+    # Start the PyQt5 application event loop
+    sys.exit(autopilot_hmi.app.exec_())
+
 
 if __name__ == '__main__':
     main()
