@@ -31,6 +31,13 @@ def generate_launch_description():
         #output    = 'screen'
     )
 
+    kontroller = Node(
+        package    = "kontrollsystem", 
+        executable = "kontroller",
+        name       = 'kontroller',
+        output    = 'screen'
+    )
+
     propulsion_node = Node(
         package    = "ngc_propulsion_sim", 
         executable = "ngc_propulsion_sim",
@@ -63,12 +70,27 @@ def generate_launch_description():
         output     = 'screen'
     )
 
+    hmi_node_autopilot = Node(
+        package     = "ngc_hmi", 
+        executable  = "ngc_hmi_autopilot",
+        name        = 'hmi_ap',
+        output     = 'screen'
+    )
+
     plotjuggler_node = Node(
         package    = "plotjuggler", 
         executable = "plotjuggler",
         arguments  = ["--layout",  plotjuggler_config] 
         
     )
+
+    hmi_node_yaml_editor = Node(
+        package     = "ngc_hmi", 
+        executable  = "ngc_hmi_yaml_editor",
+        name        = 'hmi_editor',
+        output     = 'screen'
+    )
+
     delayed_plotjuggler= TimerAction(period= 3.0, actions=[plotjuggler_node])
 
     ld = LaunchDescription() 
@@ -76,8 +98,12 @@ def generate_launch_description():
     ld.add_action(sim_node)
     ld.add_action(gnss_node)
     ld.add_action(compass_node)
-    ld.add_action(anemometer_node)
-    ld.add_action(propulsion_node)
-    ld.add_action(hmi_node)
+    #ld.add_action(anemometer_node)
+    #ld.add_action(propulsion_node)
+    #ld.add_action(hmi_node)
+    ld.add_action(hmi_node_yaml_editor)
+    ld.add_action(hmi_node_autopilot)
     ld.add_action(delayed_plotjuggler)
+    ld.add_action(kontroller)
+
     return ld

@@ -1,4 +1,6 @@
 import sys
+import os
+import signal
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QFormLayout, QHBoxLayout, QPushButton, QLabel, QSpacerItem, QSizePolicy, QLCDNumber
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QFont
@@ -7,10 +9,10 @@ from rclpy.node import Node
 from ngc_interfaces.msg import ThrusterSignals
 from ngc_utils.thruster_objects_loader import load_thrusters_from_yaml
 import yaml
-import os
 from ament_index_python.packages import get_package_share_directory
 from ngc_utils.qos_profiles import default_qos_profile
 from ngc_hmi.custom_slider_widget import CustomSliderWidget
+
 
 class HMI(Node):
     def __init__(self):
@@ -27,8 +29,8 @@ class HMI(Node):
         vessel_config_path = os.path.join(yaml_package_path, self.get_parameter('vessel_config_file').get_parameter_value().string_value)
 
         # Load configurations and initialize VesselModel
-        self.simulation_config  = self.load_yaml_file(simulation_config_path)
-        self.vessel_config      = self.load_yaml_file(vessel_config_path)
+        self.simulation_config = self.load_yaml_file(simulation_config_path)
+        self.vessel_config = self.load_yaml_file(vessel_config_path)
 
         # Create thruster objects from yaml file
         self.thrusters = load_thrusters_from_yaml(self.get_logger(), yaml_package_name, self.get_parameter('propulsion_config_file').get_parameter_value().string_value, self.simulation_config['physical_parameters'])
@@ -82,12 +84,10 @@ class HMI(Node):
         self.window.setLayout(self.layout)
         self.window.show()
 
-        # Process ROS 2 callbacks regularly
+        # Timer for handling ROS2 callbacks
         self.timer = QTimer()
         self.timer.timeout.connect(self.ros_spin)
-        self.timer.start(100)  # 100 ms interval
-
-        sys.exit(self.app.exec_())
+        self.timer.start(100)  # Spin ROS every 100ms
 
     def ros_spin(self):
         rclpy.spin_once(self, timeout_sec=0.1)
@@ -103,7 +103,6 @@ class HMI(Node):
         lcd_display.setSegmentStyle(QLCDNumber.Flat)
         lcd_display.setStyleSheet("background-color: #DFDFDF; color: #1E90FF; border: 1px solid grey;")
         lcd_display.setDigitCount(8)
-        #lcd_display.setSmallDecimalPoint(True)
 
         self.lcds[f'{thruster.id}_{label_text.lower()}'] = lcd_display
 
@@ -159,7 +158,7 @@ class HMI(Node):
                     value = round(value, 1)
                 self.sliders[slider_key].set_feedback_value(value)
                 self.lcds[slider_key].display(value)
-        
+
         # Update button color based on active signal
         if thruster_id in self.buttons:
             button = self.buttons[thruster_id]
@@ -204,11 +203,31 @@ class HMI(Node):
         with open(file_path, 'r') as file:
             return yaml.safe_load(file)
 
+
 def main(args=None):
+    # Initialize ROS2
     rclpy.init(args=args)
+
+    # Create the HMI node
     hmi = HMI()
-    rclpy.spin(hmi)
-    rclpy.shutdown()
+
+    # Set up a QTimer to spin the ROS2 node and handle callbacks
+    timer = QTimer()
+    timer.timeout.connect(lambda: rclpy.spin_once(hmi, timeout_sec=0.1))
+    timer.start(100)  # Call every 100 ms
+
+    # Handle signal for graceful shutdown
+    def signal_handler(sig, frame):
+        print("SIGINT received, shutting down...")
+        hmi.destroy_node()
+        rclpy.shutdown()
+        QApplication.quit()
+
+    signal.signal(signal.SIGINT, signal_handler)
+
+    # Start the PyQt5 application event loop
+    sys.exit(hmi.app.exec_())
+
 
 if __name__ == '__main__':
     main()

@@ -26,8 +26,8 @@ vessel:
       N_rdot: 15                        # 84833.0    # -pi(T/L)² *[1/12 + 0,017 CB * B/T - 0,33 (B/L)]      (eq. 4.12)
     nonlinear_damping:
       X_uu: 100.0
-      X_ur: 0.0
-      X_uv: 0.0
+      X_ur: 20.0
+      X_uv: 10.0
     linear_damping:
       Z_w: 10.0                           # heave damping term
       K_p: 10.0                           # roll damping term
