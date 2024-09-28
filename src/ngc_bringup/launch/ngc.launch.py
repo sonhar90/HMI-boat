@@ -38,6 +38,13 @@ def generate_launch_description():
         output    = 'screen'
     )
 
+    estimator = Node(
+        package    = "kontrollsystem", 
+        executable = "estimator",
+        name       = 'estimator',
+        #output    = 'screen'
+    )
+
     propulsion_node = Node(
         package    = "ngc_propulsion_sim", 
         executable = "ngc_propulsion_sim",
@@ -105,5 +112,6 @@ def generate_launch_description():
     ld.add_action(hmi_node_autopilot)
     ld.add_action(delayed_plotjuggler)
     ld.add_action(kontroller)
+    ld.add_action(estimator)
 
     return ld

@@ -11,3 +11,11 @@ speed_control:
   ki_scale: 5
   ki_saturation_limit: 1.25  #m/s
   X_uu: 100
+
+  estimator:
+  L1: 1
+  omega_e: 1.5
+  bias_gain: 2
+  X_uu: 100
+  Y_vv: 100
+  N_rr: 100
