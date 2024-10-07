@@ -1,0 +1,22 @@
+{
+    "python.autoComplete.extraPaths": [
+        "/home/sherlock/MEPA2001_2024/install/ngc_hull_sim/lib/python3.12/site-packages",
+        "/home/sherlock/MEPA2001_2024/install/ngc_utils/lib/python3.12/site-packages",
+        "/home/sherlock/MEPA2001_2024/install/ngc_sensor_sims/lib/python3.12/site-packages",
+        "/home/sherlock/MEPA2001_2024/install/ngc_propulsion_sim/lib/python3.12/site-packages",
+        "/home/sherlock/MEPA2001_2024/install/ngc_hmi/lib/python3.12/site-packages",
+        "/home/sherlock/MEPA2001_2024/install/ngc_interfaces/lib/python3.12/site-packages",
+        "/home/sherlock/MEPA2001_2024/install/kontrollsystemSondre/lib/python3.12/site-packages",
+        "/opt/ros/jazzy/lib/python3.12/site-packages"
+    ],
+    "python.analysis.extraPaths": [
+        "/home/sherlock/MEPA2001_2024/install/ngc_hull_sim/lib/python3.12/site-packages",
+        "/home/sherlock/MEPA2001_2024/install/ngc_utils/lib/python3.12/site-packages",
+        "/home/sherlock/MEPA2001_2024/install/ngc_sensor_sims/lib/python3.12/site-packages",
+        "/home/sherlock/MEPA2001_2024/install/ngc_propulsion_sim/lib/python3.12/site-packages",
+        "/home/sherlock/MEPA2001_2024/install/ngc_hmi/lib/python3.12/site-packages",
+        "/home/sherlock/MEPA2001_2024/install/ngc_interfaces/lib/python3.12/site-packages",
+        "/home/sherlock/MEPA2001_2024/install/kontrollsystemSondre/lib/python3.12/site-packages",
+        "/opt/ros/jazzy/lib/python3.12/site-packages"
+    ]
+}

@@ -1,0 +1,18 @@
+// generated from rosidl_adapter/resource/msg.idl.em
+// with input from ngc_interfaces/msg/Wind.msg
+// generated code does not contain a copyright notice
+
+
+module ngc_interfaces {
+  module msg {
+    struct Wind {
+      @verbatim (language="comment", text=
+        "wind direction in degrees")
+      float direction_relative_deg;
+
+      @verbatim (language="comment", text=
+        "wind speed in meters pr. second")
+      float magnitude_ms;
+    };
+  };
+};
