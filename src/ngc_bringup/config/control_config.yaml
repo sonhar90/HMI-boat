@@ -1,0 +1,21 @@
+heading_control:
+  omega: 1.5
+  zeta: 1.0
+  ki_scale: 5
+  ki_saturation_limit: 15  #degrees
+  N_rr: 25
+  linearization_point: 0.2
+  
+speed_control:
+  K_p: 1
+  ki_scale: 5
+  ki_saturation_limit: 1.25  #m/s
+  X_uu: 100
+
+  estimator:
+  L1: 1
+  omega_e: 1.5
+  bias_gain: 2
+  X_uu: 100
+  Y_vv: 100
+  N_rr: 100

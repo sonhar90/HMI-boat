@@ -1,0 +1,51 @@
+#paramaeter for the thrusters on the boat
+
+rud_prop1: #name of the thruster
+  position: [6,0,0] # the position of the thruster form CO (the forces are poisitve in the direction according to the SNAME-notation)
+  type: propeller_fixed    #(str) [propeller_fixed, propeller_variable_rudder]
+  thrust_torque_curve:  my_KT_curve          #must match a function name in ThrustTorqueCurves.py the the system supports a veriety of blades with different KT and KQ curves.
+  prop_diameter:         1.0              # the prop diameter in meters
+  rudder:
+    height: 0.4                      #the rudder height in meters
+    length: 0.2
+    thikness: 0.02                   #at the thickest point
+    block_coeff: 0.5
+
+rud_prop2: #name of the thruster
+  position: [6,1,0] # the position of the thruster form CO (the forces are poisitve in the direction according to the SNAME-notation)
+  type: rudder_propeller_variable    #(str) [propeller_fixed, propeller_variable_rudder]
+  thrust_torque_curve:  my_KT_curve          #must match a function name in ThrustTorqueCurves.py the the system supports a veriety of blades with different KT and KQ curves.
+  prop_diameter:         0.4              # the prop diameter in meters
+  rudder:
+    height: 0.5                      #the rudder height in meters
+    length: 0.4
+    thikness: 0.02
+    block_coeff: 0.5
+    l_prop_to_rudder: 1.0            #distance from center of propeller to center of lift to ruderrudder
+
+fwd_azimuth: #name of the thruster
+  position: [0,0,0] # the position of the thruster form CO (the forces are poisitve in the direction according to the SNAME-notation)
+  type: azimuth    #(str) [propeller_fixed, propeller_variable_rudder]
+  thrust_torque_curve:   my_KT_curve #must match a function name in ThrustTorqueCurves.py the the system supports a veriety of blades with different KT and KQ curves.
+  prop_dim:    1.0                   # the prop diameter in meters
+
+
+aft_azimuth: #name of the thruster
+  position: [0,0,0] # the position of the thruster form CO (the forces are poisitve in the direction according to the SNAME-notation)
+  type: azimuth    #(str) [propeller_fixed, propeller_variable_rudder]
+  thrust_torque_curve:   my_KT_curve #must match a function name in ThrustTorqueCurves.py the the system supports a veriety of blades with different KT and KQ curves.
+  prop_dim:    1.0                   # the prop diameter in meters
+
+
+fwd_tunnel: #name of the thruster
+  position: [0,0,0] # the position of the thruster form CO (the forces are poisitve in the direction according to the SNAME-notation)
+  type: tunnel_thruster    #(str) [propeller_fixed, propeller_variable_rudder]
+  thrust_torque_curve:   my_KT_curve #must match a function name in ThrustTorqueCurves.py the the system supports a veriety of blades with different KT and KQ curves.
+  prop_dim:    1.0                   # the prop diameter in meters
+
+
+aft_tunnel: #name of the thruster
+  position: [0,0,0] # the position of the thruster form CO (the forces are poisitve in the direction according to the SNAME-notation)
+  type: tunnel_thruster    #(str) [propeller_fixed, propeller_variable_rudder]
+  thrust_torque_curve:   my_KT_curve #must match a function name in ThrustTorqueCurves.py the the system supports a veriety of blades with different KT and KQ curves.
+  prop_dim:    1.0                   # the prop diameter in meters
