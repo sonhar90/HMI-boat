@@ -28,21 +28,7 @@ def generate_launch_description():
         package    = "ngc_hull_sim", 
         executable = "simulate",
         name       = 'ngc_hull_sim',
-        #output    = 'screen'
-    )
-
-    kontroller = Node(
-        package    = "kontrollsystem", 
-        executable = "kontroller",
-        name       = 'kontroller',
         output    = 'screen'
-    )
-
-    estimator = Node(
-        package    = "kontrollsystem", 
-        executable = "estimator",
-        name       = 'estimator',
-        #output    = 'screen'
     )
 
     propulsion_node = Node(
@@ -61,7 +47,8 @@ def generate_launch_description():
     compass_node = Node(
         package    = "ngc_sensor_sims", 
         executable = "compass",
-        name       = 'compass'
+        name       = 'compass',
+        output     = 'screen'
     )
     
     anemometer_node = Node(
@@ -98,7 +85,31 @@ def generate_launch_description():
         output     = 'screen'
     )
 
-    delayed_plotjuggler= TimerAction(period= 3.0, actions=[plotjuggler_node])
+    kontroller = Node(
+        package     = "kontrollsystem",
+        executable  = "kontroller",
+        name        = 'kontroller',
+        output      = 'screen'
+    )
+
+    estimator = Node(
+        package     = "kontrollsystem",
+        executable  = "estimator",
+        name        = 'estimator',
+        #output      = 'screen'
+    )
+
+    allokering = Node(
+        package     = "kontrollsystem",
+        executable  = "allokering",
+        name        = 'allokering',
+        output      = 'screen'
+    )
+
+    delayed_plotjuggler= TimerAction(period= 6.0, actions=[plotjuggler_node])
+    delayed_kontroller= TimerAction(period= 2.0, actions=[kontroller])
+    delayed_estimator= TimerAction(period= 1.0, actions=[estimator])
+    delayed_allokering= TimerAction(period= 3.0, actions=[allokering])
 
     ld = LaunchDescription() 
     
@@ -106,12 +117,13 @@ def generate_launch_description():
     ld.add_action(gnss_node)
     ld.add_action(compass_node)
     #ld.add_action(anemometer_node)
-    #ld.add_action(propulsion_node)
+    ld.add_action(propulsion_node)
     #ld.add_action(hmi_node)
     ld.add_action(hmi_node_yaml_editor)
     ld.add_action(hmi_node_autopilot)
     ld.add_action(delayed_plotjuggler)
-    ld.add_action(kontroller)
-    ld.add_action(estimator)
+    ld.add_action(delayed_kontroller)
+    ld.add_action(delayed_estimator)
+    ld.add_action(delayed_allokering)
 
     return ld
