@@ -1,0 +1,2 @@
+bool standby_mode
+bool auto_mode

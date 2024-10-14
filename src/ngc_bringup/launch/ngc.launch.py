@@ -85,29 +85,29 @@ def generate_launch_description():
         output     = 'screen'
     )
 
-    kontroller = Node(
-        package     = "kontrollsystem",
+    regulator = Node(
+        package     = "regulator",
         executable  = "kontroller",
         name        = 'kontroller',
         output      = 'screen'
     )
 
     estimator = Node(
-        package     = "kontrollsystem",
+        package     = "regulator",
         executable  = "estimator",
         name        = 'estimator',
         #output      = 'screen'
     )
 
     allokering = Node(
-        package     = "kontrollsystem",
+        package     = "regulator",
         executable  = "allokering",
         name        = 'allokering',
         output      = 'screen'
     )
 
     delayed_plotjuggler= TimerAction(period= 6.0, actions=[plotjuggler_node])
-    delayed_kontroller= TimerAction(period= 2.0, actions=[kontroller])
+    delayed_kontroller= TimerAction(period= 2.0, actions=[regulator])
     delayed_estimator= TimerAction(period= 1.0, actions=[estimator])
     delayed_allokering= TimerAction(period= 3.0, actions=[allokering])
 

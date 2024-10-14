@@ -5,16 +5,18 @@ heading_control:
   ki_saturation_limit: 15  #degrees
   N_rr: 25
   linearization_point: 0.2
+  eps: 0.8 # % av max yaw
   
 speed_control:
   K_p: 1
   ki_scale: 5
   ki_saturation_limit: 1.25  #m/s
   X_uu: 100
+  eps: 0.8 # % av max surge
 
-  estimator:
+estimator:
   L1: 1
-  omega_e: 1.5
+  omega_e: 0.5
   bias_gain: 2
   X_uu: 100
   Y_vv: 100

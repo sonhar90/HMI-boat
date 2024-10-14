@@ -1,8 +1,6 @@
 from setuptools import find_packages, setup
-import os
-from glob import glob
 
-package_name = 'kontrollsystem'
+package_name = 'regulator'
 
 setup(
     name=package_name,
@@ -15,16 +13,16 @@ setup(
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='vidarkar',
-    maintainer_email='vidarkar@stud.ntnu.no',
+    maintainer='oskar',
+    maintainer_email='oskarfjo@stud.ntnu.no',
     description='TODO: Package description',
     license='TODO: License declaration',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'kontroller = kontrollsystem.kontroller:main',
-            'estimator = kontrollsystem.estimator:main',
-            'allokering = kontrollsystem.allokering:main'
+            'kontroller = regulator.kontroller:main',
+            'estimator = regulator.estimator:main',
+            'allokering = regulator.allokering:main'
         ],
     },
 )

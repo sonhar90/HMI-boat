@@ -3,7 +3,7 @@ import rclpy
 from rclpy.node import Node
 from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.executors import MultiThreadedExecutor
-from ngc_interfaces.msg import Eta, Nu
+from ngc_interfaces.msg import Eta, Nu, GNSS
 from ngc_utils.geo_utils import add_body_frame_pos_to_lat_lon, add_distance_to_lat_lon
 from ngc_utils.nmea_utils import create_gga_message, create_vtg_message
 import socket
@@ -67,6 +67,8 @@ class GNSSSimulator(Node):
         self.eta_subscription = self.create_subscription(Eta, 'eta_sim', self.eta_callback, default_qos_profile, callback_group=self.callback_group)
         self.nu_subscription = self.create_subscription(Nu, 'nu_sim', self.nu_callback, default_qos_profile, callback_group=self.callback_group)
         
+        self.gnss_pub = self.create_publisher(GNSS, 'gnss_measurement', default_qos_profile)    
+
         # Initialize message variables
         self.latest_eta_msg = None
         self.latest_nu_msg = None
@@ -120,6 +122,13 @@ class GNSSSimulator(Node):
 
             self.sock.sendto(gga_message.encode(), (self.udp_ip, self.udp_port))
             self.sock.sendto(vtg_message.encode(), (self.udp_ip, self.udp_port))
+
+            # Make a message GNSS type
+            meas = GNSS()
+            meas.lat = noisy_lat
+            meas.lon = noisy_lon
+            meas.valid_signal = True
+            self.gnss_pub.publish(meas)
 
             local_latest_eta_msg = None
             local_latest_nu_msg = None

@@ -31,6 +31,8 @@ class PropulsionSimulator(Node):
         self.timer = self.create_timer(self.propulsion_model.step_size, self.step_simulation)
         self.get_logger().info("Setup finished.")
 
+        self.debug = False
+
     def step_simulation(self):
         tau = self.propulsion_model.step_simulation(self.nu)
         
@@ -44,9 +46,15 @@ class PropulsionSimulator(Node):
         
         self.tau_pub.publish(tau_message)
 
+        if self.debug == True:
+            self.get_logger().info(f'tau message: {tau_message}')
+            self.get_logger().info(f'tau: {tau}')
+
     def create_thruster_callback(self, thruster):
         def callback(msg: ThrusterSignals):
             thruster.setpoints = msg
+            if self.debug == True:
+                self.get_logger().info(f'thruster {msg.thruster_id} setpoints: {thruster.setpoints}')
         return callback
 
     def nu_callback(self, msg: Nu):

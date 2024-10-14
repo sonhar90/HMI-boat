@@ -3,11 +3,12 @@ import rclpy
 from rclpy.node import Node
 from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.executors import MultiThreadedExecutor
-from ngc_interfaces.msg import Eta, Nu
+from ngc_interfaces.msg import Eta, Nu, HeadingDevice
 from ngc_utils.nmea_utils import create_hdt_message, create_rot_message
 import socket
 import math
 from ngc_utils.qos_profiles import default_qos_profile
+import ngc_utils.math_utils as mu
 
 class CompassSimulator(Node):
     def __init__(self):
@@ -59,6 +60,8 @@ class CompassSimulator(Node):
         self.eta_subscription = self.create_subscription(Eta, 'eta_sim', self.eta_callback, default_qos_profile, callback_group=self.callback_group)
         self.nu_subscription = self.create_subscription(Nu, 'nu_sim', self.nu_callback, default_qos_profile, callback_group=self.callback_group)
         
+        self.heading_pub = self.create_publisher(HeadingDevice, 'heading_measurement', default_qos_profile)    
+
         # Initialize message variables
         self.latest_eta_msg = None
         self.latest_nu_msg = None
@@ -93,6 +96,14 @@ class CompassSimulator(Node):
             
             self.sock.sendto(hdt_message.encode(), (self.udp_ip, self.udp_port))
             self.sock.sendto(rot_message.encode(), (self.udp_ip, self.udp_port))
+
+            meas              = HeadingDevice()
+            meas.heading      = mu.mapToZero2Pi(mu.mapToZero2Pi(local_latest_eta_msg.psi) + np.deg2rad(self.heading_noise_state))
+            meas.rot          = local_latest_nu_msg.r + np.deg2rad(self.rot_noise_state)
+            meas.valid_signal = True
+            self.heading_pub.publish(meas)
+            
+            #self.get_logger().info(f'heading: {meas.heading}')
 
             local_latest_eta_msg = None
             local_latest_nu_msg = None

@@ -13,6 +13,9 @@ def mapToPiPi(angle_in_radians):
     
     return wrapped_angle
 
+def mapToZero2Pi(angle_in_radians):
+    return angle_in_radians % (2 * np.pi)
+
 def RotationMatrix(phi,theta,psi):
         
         # Computes the Euler angle rotation matrix R in SO(3) using the zyx convention        
