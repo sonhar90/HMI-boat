@@ -22,7 +22,8 @@ setup(
         'console_scripts': [
             'kontroller = regulator.kontroller:main',
             'estimator = regulator.estimator:main',
-            'allokering = regulator.allokering:main'
+            'allokering = regulator.allokering:main',
+            'guide = regulator.guide:main'
         ],
     },
 )
