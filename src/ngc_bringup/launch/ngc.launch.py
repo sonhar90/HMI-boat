@@ -148,7 +148,7 @@ def generate_launch_description():
     ld.add_action(delayed_kontroller)
     ld.add_action(delayed_estimator)
     ld.add_action(delayed_allokering)
-    #ld.add_action(delayed_guide)
+    ld.add_action(delayed_guide)
     #ld.add_action(hmi)
     ld.add_action(hmi_gui_node) 
 

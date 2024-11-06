@@ -31,9 +31,9 @@ class HMIWindow(QMainWindow):
         self.grid_layout = QGridLayout(self.central_widget)
 
         # Initialize lists to store data for graphs
-        self.eta_setpoints = []
+        self.eta_setpoints_HMI = []
         self.eta_sim_values = []
-        self.nu_setpoints = []
+        self.nu_setpoints_HMI = []
         self.nu_sim_values = []
 
         # Heading og speed control
@@ -83,8 +83,8 @@ class HMIWindow(QMainWindow):
         self.node.create_subscription(Nu, 'nu_sim', self.update_nu_feedback, default_qos_profile)
 
         # Publishers for eta_setpoint and nu_setpoint
-        self.eta_publisher = self.node.create_publisher(Eta, 'eta_setpoint', default_qos_profile)
-        self.nu_publisher = self.node.create_publisher(Nu, 'nu_setpoint', default_qos_profile)
+        self.eta_publisher_HMI = self.node.create_publisher(Eta, 'eta_setpoint_HMI', default_qos_profile)
+        self.nu_publisher_HMI = self.node.create_publisher(Nu, 'nu_setpoint_HMI', default_qos_profile)
         
         # Publiser ButtonControl meldinger for knappetrykk
         self.button_publisher = self.node.create_publisher(ButtonControl, 'button_control', default_qos_profile)
@@ -176,7 +176,7 @@ class HMIWindow(QMainWindow):
             self.eta_sim_values.pop(0)
 
         # Logging av mottatt psi-verdi
-        self.node.get_logger().info(f"Received eta_sim psi (degrees): {psi_in_degrees}")
+        #self.node.get_logger().info(f"Received eta_sim psi (degrees): {psi_in_degrees}")
 
 
     def update_nu_feedback(self, msg):
@@ -205,39 +205,39 @@ class HMIWindow(QMainWindow):
             return
         
         eta_msg.psi = float(mapped_psi)
-        self.eta_publisher.publish(eta_msg)
-        self.eta_setpoints.append(self.heading_setpoint)
-        if len(self.eta_setpoints) > 100:
-            self.eta_setpoints.pop(0)
+        self.eta_publisher_HMI.publish(eta_msg)
+        self.eta_setpoints_HMI.append(self.heading_setpoint)
+        if len(self.eta_setpoints_HMI) > 100:
+            self.eta_setpoints_HMI.pop(0)
 
         # Logging av publisert eta_setpoint
-        self.node.get_logger().info(f"Published eta_setpoint (psi in degrees): {self.heading_setpoint}")
+        #self.node.get_logger().info(f"Published eta_setpoint_HMI (psi in degrees): {self.heading_setpoint}")
 
         nu_msg = Nu()
         nu_msg.u = float(self.surge_setpoint) * 0.514444
-        self.nu_publisher.publish(nu_msg)
-        self.nu_setpoints.append(nu_msg.u)
-        if len(self.nu_setpoints) > 100:
-            self.nu_setpoints.pop(0)
+        self.nu_publisher_HMI.publish(nu_msg)
+        self.nu_setpoints_HMI.append(nu_msg.u)
+        if len(self.nu_setpoints_HMI) > 100:
+            self.nu_setpoints_HMI.pop(0)
 
         # Logging av publisert surge_setpoint
-        self.node.get_logger().info(f"Published nu_setpoint (u in m/s): {nu_msg.u}")
+        #self.node.get_logger().info(f"Published nu_setpoint_HMI (u in m/s): {nu_msg.u}")
 
 
     def update_graphs(self):
-        if self.eta_setpoints and self.eta_sim_values:
+        if self.eta_setpoints_HMI and self.eta_sim_values:
             ax1 = self.graph_canvas_1.figure.get_axes()[0]
             ax1.clear()
-            ax1.plot(range(len(self.eta_setpoints)), self.eta_setpoints, label="Setpoint", color='#39FF14')
+            ax1.plot(range(len(self.eta_setpoints_HMI)), self.eta_setpoints_HMI, label="Setpoint", color='#39FF14')
             ax1.plot(range(len(self.eta_sim_values)), self.eta_sim_values, label="Simulated", color='#FF073A')
             ax1.legend(loc="upper right")
             ax1.set_title("Eta Setpoint vs Sim", color="white")
             self.graph_canvas_1.draw()
 
-        if self.nu_setpoints and self.nu_sim_values:
+        if self.nu_setpoints_HMI and self.nu_sim_values:
             ax2 = self.graph_canvas_2.figure.get_axes()[0]
             ax2.clear()
-            ax2.plot(range(len(self.nu_setpoints)), self.nu_setpoints, label="Setpoint", color='#39FF14')
+            ax2.plot(range(len(self.nu_setpoints_HMI)), self.nu_setpoints_HMI, label="Setpoint", color='#39FF14')
             ax2.plot(range(len(self.nu_sim_values)), self.nu_sim_values, label="Simulated", color='#FF073A')
             ax2.legend(loc="upper right")
             ax2.set_title("Nu Setpoint vs Sim", color="white")
@@ -245,11 +245,12 @@ class HMIWindow(QMainWindow):
 
     def add_thruster_buttons(self):
         button_layout = QHBoxLayout()
-        buttons = ['Standby', 'Position', 'Sail', 'Track']
-        
-        for label in buttons:
+        buttons = {'Standby': 0, 'Position': 1, 'Sail': 2, 'Track': 3}
+
+        for label, mode in buttons.items():
             button = QPushButton(label)
             button.setCheckable(True)
+            button.clicked.connect(lambda _, m=mode: self.publish_button_mode(m))
             button.setStyleSheet("""
                 QPushButton {
                     background-color: #1E90FF;
@@ -268,7 +269,7 @@ class HMIWindow(QMainWindow):
                 }
             """)
             button_layout.addWidget(button)
-        
+
         exit_button = QPushButton('Exit')
         exit_button.clicked.connect(self.close)
         button_layout.addWidget(exit_button)

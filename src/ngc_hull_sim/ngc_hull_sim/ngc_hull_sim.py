@@ -129,7 +129,7 @@ class HullSimulator(Node):
         self.eta[5] = mu.mapToPiPi(self.eta[5])
 
         # Logging for debugging purposes
-        self.get_logger().info(f"Before update: Latitude: {self.latitude}, Longitude: {self.longitude}, eta[0]: {self.eta[0]}, eta[1]: {self.eta[1]}, eta[5]: {self.eta[5]}")
+        #self.get_logger().info(f"Before update: Latitude: {self.latitude}, Longitude: {self.longitude}, eta[0]: {self.eta[0]}, eta[1]: {self.eta[1]}, eta[5]: {self.eta[5]}")
 
 
         #Update latitude and longitude positions from the differetial change in north and east positions
