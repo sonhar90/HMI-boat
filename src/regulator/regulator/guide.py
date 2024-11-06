@@ -45,7 +45,7 @@ class guide(Node):
         # Starter kontroll-løkken som kjører med samme tidssteg som simulatoren
         self.timer = self.create_timer(self.step_size, self.step_control)
 
-        self.get_logger().info("Guide node er initialisert.")
+        
 
     def eta_setpoint_HMI_callback(self, msg):
         """Callback for eta_setpoint_HMI subscription."""

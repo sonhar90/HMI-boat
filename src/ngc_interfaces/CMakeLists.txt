@@ -18,6 +18,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
 "msg/ThrusterSignals.msg"
 "msg/GNSS.msg"
 "msg/HeadingDevice.msg"
+"msg/ButtonControl.msg" 
 )
 
 ament_export_dependencies(rosidl_default_runtime)

@@ -23,7 +23,10 @@ setup(
             'kontroller = regulator.kontroller:main',
             'estimator = regulator.estimator:main',
             'allokering = regulator.allokering:main',
-            'guide = regulator.guide:main'
+            'guide = regulator.guide:main',
+            'hmi = regulator.hmi:main',
+            'hmi_gui = regulator.hmi_gui:main'
+            
         ],
     },
 )

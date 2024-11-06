@@ -113,6 +113,21 @@ def generate_launch_description():
         output      = 'screen'
     )
 
+    hmi = Node(
+        package     = "regulator",
+        executable  = "hmi",
+        name        = 'hmi',
+        #output      = 'screen'
+    )
+
+    hmi_gui_node = Node(
+        package='regulator',
+        executable='hmi_gui',
+        name='hmi_gui',
+        output='screen'
+    )
+    
+
     delayed_plotjuggler= TimerAction(period= 6.0, actions=[plotjuggler_node])
     delayed_kontroller= TimerAction(period= 2.0, actions=[regulator])
     delayed_estimator= TimerAction(period= 1.0, actions=[estimator])
@@ -128,11 +143,13 @@ def generate_launch_description():
     ld.add_action(propulsion_node)
     #ld.add_action(hmi_node)
     ld.add_action(hmi_node_yaml_editor)
-    ld.add_action(hmi_node_autopilot)
-    ld.add_action(delayed_plotjuggler)
+    #ld.add_action(hmi_node_autopilot)
+    #ld.add_action(delayed_plotjuggler)
     ld.add_action(delayed_kontroller)
     ld.add_action(delayed_estimator)
     ld.add_action(delayed_allokering)
-    ld.add_action(delayed_guide)
+    #ld.add_action(delayed_guide)
+    #ld.add_action(hmi)
+    ld.add_action(hmi_gui_node) 
 
     return ld
