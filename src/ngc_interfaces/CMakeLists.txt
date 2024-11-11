@@ -10,15 +10,20 @@ find_package(ament_cmake REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
+
 "msg/Eta.msg"
 "msg/Nu.msg"
 "msg/NuDot.msg"
 "msg/Tau.msg"
 "msg/Wind.msg"
 "msg/ThrusterSignals.msg"
+"msg/Route.msg"
 "msg/GNSS.msg"
 "msg/HeadingDevice.msg"
-"msg/ButtonControl.msg" 
+"msg/SystemMode.msg"
+"msg/OtterStatus.msg"
+"msg/ButtonControl.msg"
+"msg/Waypoint.msg"
 )
 
 ament_export_dependencies(rosidl_default_runtime)

@@ -1,15 +1,11 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>regulator</name>
+  <name>ngc_otter_interface</name>
   <version>0.0.0</version>
   <description>TODO: Package description</description>
-  <maintainer email="vidarkar@stud.ntnu.no">vidarkar</maintainer>
+  <maintainer email="oivindkjerstad@gmail.com">oivindk</maintainer>
   <license>TODO: License declaration</license>
-
-  <depend>ngc_interfaces</depend>
-  <depend>std_msgs</depend> <!-- Legg til std_msgs som avhengighet for meldingen -->
-  <depend>rosidl_default_generators</depend> <!-- Legg til for meldingstøtte -->
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>

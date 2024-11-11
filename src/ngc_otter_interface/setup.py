@@ -1,6 +1,6 @@
 from setuptools import find_packages, setup
 
-package_name = 'regulator'
+package_name = 'ngc_otter_interface'
 
 setup(
     name=package_name,
@@ -10,23 +10,23 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
+        # Include the parsed_data.csv in the package installation
+        ('share/' + package_name + '/resource', ['resource/parsed_data.csv']),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='vidarkar2002',
-    maintainer_email='vidarkar@stud.ntnu.no',
+    maintainer='oivindk',
+    maintainer_email='oivindkjerstad@gmail.com',
     description='TODO: Package description',
     license='TODO: License declaration',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'kontroller = regulator.kontroller:main',
-            'estimator = regulator.estimator:main',
-            'allokering = regulator.allokering:main',
-            'guide = regulator.guide:main',
-            'hmi = regulator.hmi:main',
-            'hmi_gui = regulator.hmi_gui:main',
-            'waypoint_controller = regulator.waypoint_controller:main'
+            "otter_interface = ngc_otter_interface.otter_interface_node:main"
         ],
+    },
+    package_data={
+        # Include the CSV file in the package data
+        '': ['resource/*.csv'],
     },
 )

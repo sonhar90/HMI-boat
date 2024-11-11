@@ -1,6 +1,6 @@
 from setuptools import find_packages, setup
 
-package_name = 'regulator'
+package_name = 'position'
 
 setup(
     name=package_name,
@@ -13,20 +13,13 @@ setup(
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='vidarkar2002',
+    maintainer='vidarkar',
     maintainer_email='vidarkar@stud.ntnu.no',
     description='TODO: Package description',
     license='TODO: License declaration',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'kontroller = regulator.kontroller:main',
-            'estimator = regulator.estimator:main',
-            'allokering = regulator.allokering:main',
-            'guide = regulator.guide:main',
-            'hmi = regulator.hmi:main',
-            'hmi_gui = regulator.hmi_gui:main',
-            'waypoint_controller = regulator.waypoint_controller:main'
         ],
     },
 )
