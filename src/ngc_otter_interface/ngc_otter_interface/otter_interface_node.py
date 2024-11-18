@@ -174,6 +174,8 @@ class otter_connector():
                 error_message = message
                 self.node.get_logger().warning(error_message)
 
+            #self.node.get_logger().info(f"{message}")
+
         # GNSS
         if gps_message != "":
 
@@ -386,6 +388,8 @@ class OtterUSVNode(Node):
 
             self.data               = self.load_parsed_data(csv_file_path)
 
+            self.get_logger().info(f"1")    
+
             self.rpm_values = np.array([(entry[0], entry[1]) for entry in self.data])  # Starboard and Port RPM pairs
             self.Fx_values  = np.array([entry[2] for entry in self.data])  # Corresponding F_x
             self.Mz_values  = np.array([entry[3] for entry in self.data])  # Corresponding M_z
@@ -394,12 +398,15 @@ class OtterUSVNode(Node):
             self.log_file = open('otter_status_log.csv', 'a', newline='')
             self.csv_writer = csv.writer(self.log_file)
             
+            self.get_logger().info(f"2")
+
             # Check if file is empty to write headers
             if os.stat('otter_status_log.csv').st_size == 0 and self.simulation_config['otter_interface']['log_measurements_to_csv']:
                 self.csv_writer.writerow(['time', 'latitude', 'longitude', 'heading', 'rate of turn', 'sog', 'cog', 'rpm_port_setpoint', 'rpm_port_fb', 'rpm_stb_setpoint', 'rpm_stb_fb', 'current_mode', 'current_fuel_capacity', 'fx', 'fz'])
 
             self.sock_nmea = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
+            self.get_logger().info(f"3")
 
         # Timer to publish data at 10Hz
         self.timer = self.create_timer(0.1, self.publish_measurements)
@@ -458,14 +465,22 @@ class OtterUSVNode(Node):
         return data
     
     def map_rpm_to_force_moment(self, rpm_starboard, rpm_port):
+        
+        rpm_starboard = round(rpm_starboard)
+        rpm_port      = round(rpm_port)
+        
         # Saturate the input RPMs within the bounds of the dataset
         rpm_starboard = np.clip(rpm_starboard, self.rpm_values[:, 0].min(), self.rpm_values[:, 0].max())
-        rpm_port = np.clip(rpm_port, self.rpm_values[:, 1].min(), self.rpm_values[:, 1].max())
+        rpm_port      = np.clip(rpm_port, self.rpm_values[:, 1].min(), self.rpm_values[:, 1].max())
         
         # Interpolate Fx and Mz for the given RPM_starboard and RPM_port values
         fx = griddata(self.rpm_values, self.Fx_values, (rpm_starboard, rpm_port), method='linear')
         mz = griddata(self.rpm_values, self.Mz_values, (rpm_starboard, rpm_port), method='linear')
         
+        if np.isnan(fx) or np.isnan(mz):
+            fx = griddata(self.rpm_values, self.Fx_values, (rpm_starboard, rpm_port), method='nearest')
+            mz = griddata(self.rpm_values, self.Mz_values, (rpm_starboard, rpm_port), method='nearest')
+
         return np.round(fx,4), np.round(mz,4)
         
     def publish_measurements(self):
@@ -500,8 +515,8 @@ class OtterUSVNode(Node):
             if self.latest_heading_data is None:
                 self.latest_heading_data = HeadingDevice()
 
-            self.latest_heading_data.heading      = float(self.otter.current_orientation[2])
-            self.latest_heading_data.rot          = float(self.otter.current_rotational_velocities[2])
+            self.latest_heading_data.heading      = np.deg2rad(float(self.otter.current_orientation[2]))
+            self.latest_heading_data.rot          = np.deg2rad(float(self.otter.current_rotational_velocities[2]))
             self.latest_heading_data.valid_signal = True
 
             if self.latest_thruster_1_feedback is None:
@@ -574,7 +589,7 @@ class OtterUSVNode(Node):
 
                 self.fx = mu.saturate(float(self.latest_system_mode.fx_test),-1.0,1.0)
                 self.fz = mu.saturate(float(self.latest_system_mode.fz_test),-1.0,1.0)    
-                
+
                 self.otter.set_manual_control_mode(self.fx,0.0,self.fz)
 
             elif self.latest_system_mode.test_rpm_output_mode == True:
@@ -587,7 +602,7 @@ class OtterUSVNode(Node):
                 if self.latest_thruster_1_setpoints is not None and self.latest_thruster_2_setpoints is not None:
 
                     rpm_port_setpoint = mu.saturate(self.latest_thruster_1_setpoints.rps*60.0,-800,1100)
-                    rpm_strb_setpoint = mu.saturate(self.latest_thruster_1_setpoints.rps*60.0,-800,1100)  
+                    rpm_strb_setpoint = mu.saturate(self.latest_thruster_2_setpoints.rps*60.0,-800,1100)  
 
                     self.fx, self.fz = self.map_rpm_to_force_moment(rpm_strb_setpoint, rpm_port_setpoint)
                     self.otter.set_manual_control_mode(self.fx,0.0,self.fz)

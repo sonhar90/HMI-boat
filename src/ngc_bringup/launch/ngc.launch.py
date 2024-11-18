@@ -11,7 +11,6 @@ import yaml
 
 #: https://roboticscasual.com/tutorial-ros2-launch-files-all-you-need-to-know/ 
 def generate_launch_description():
-
     
      # Path to the simulator_config.yaml file
     simulator_config_file = os.path.join(
@@ -158,14 +157,14 @@ def generate_launch_description():
 
     ld = LaunchDescription() 
     
-    ld.add_action(sim_node)
-    ld.add_action(gnss_node)
-    ld.add_action(compass_node)
+    #ld.add_action(sim_node)
+    #ld.add_action(gnss_node)
+    #ld.add_action(compass_node)
     #ld.add_action(anemometer_node)
-    ld.add_action(propulsion_node)
+    #ld.add_action(propulsion_node)
     #ld.add_action(hmi_node)
     ld.add_action(hmi_node_yaml_editor)
-    #ld.add_action(delayed_plotjuggler)
+    ld.add_action(delayed_plotjuggler)
     ld.add_action(delayed_kontroller)
     ld.add_action(delayed_estimator)
     ld.add_action(delayed_allokering)
@@ -173,7 +172,7 @@ def generate_launch_description():
     #ld.add_action(hmi)
     ld.add_action(hmi_gui_node) 
     ld.add_action(waypoint_node)
-    #ld.add_action(otter_interface)
+    ld.add_action(otter_interface)
 
     if simulator_in_the_loop:
         ld.add_action(sim_node)

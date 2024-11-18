@@ -4,12 +4,13 @@ from PyQt5.QtCore import Qt, QTimer
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 import rclpy
-from ngc_interfaces.msg import Eta, Nu, ButtonControl
+from ngc_interfaces.msg import Eta, Nu, ButtonControl, SystemMode
 import sys
 import math
 from ngc_utils.qos_profiles import default_qos_profile
 import ngc_utils.math_utils as mu
 import numpy as np
+
 
 
 class HMIWindow(QMainWindow):
@@ -88,6 +89,8 @@ class HMIWindow(QMainWindow):
         
         # Publiser ButtonControl meldinger for knappetrykk
         self.button_publisher = self.node.create_publisher(ButtonControl, 'button_control', default_qos_profile)
+        self.systemmode_publisher = self.node.create_publisher(SystemMode, 'system_mode', default_qos_profile)   
+        
 
 
         # Publishing timer with continuous setpoint update
@@ -160,6 +163,18 @@ class HMIWindow(QMainWindow):
         self.button_publisher.publish(button_msg)
         self.node.get_logger().info(f"Knapp trykket: Publiserer melding {button_msg} til button_control.")
 
+        msg_sys = SystemMode()
+
+        if mode == 0:
+            
+            msg_sys.standby_mode = True
+            msg_sys.auto_mode    = False
+        else:
+            msg_sys.standby_mode = False
+            msg_sys.auto_mode    = True
+
+        self.systemmode_publisher.publish(msg_sys)  
+        
 
     def update_eta_feedback(self, msg):
         # Sjekk om psi-verdi er gyldig før konvertering
