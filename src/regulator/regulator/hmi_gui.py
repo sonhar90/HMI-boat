@@ -27,6 +27,9 @@ import numpy as np
 from ament_index_python.packages import get_package_share_directory
 from regulator.hmi_compass import CompassWidget
 from regulator.hmi_thruster import ThrusterBar
+import subprocess
+import os
+import time
 
 
 class HMIWindow(QMainWindow):
@@ -485,6 +488,11 @@ class HMIWindow(QMainWindow):
         )
 
 
+def keep_opencpn_on_top():
+    # Use wmctrl to ensure OpenCPN stays on top
+    subprocess.run(["wmctrl", "-r", "opencpn", "-b", "add,above"])
+
+
 def main():
     rclpy.init()
     node = rclpy.create_node("hmi_gui")
@@ -492,12 +500,31 @@ def main():
     hmi_window = HMIWindow(node)
     hmi_window.show()
 
+    # Launch OpenCPN
+    opencpn_process = subprocess.Popen(["opencpn"])
+
+    # Allow time for OpenCPN to start
+    time.sleep(3)
+
+    # Use wmctrl to ensure OpenCPN overlays the HMI window initially
+    hmi_window_title = "Ship Control HMI"
+    subprocess.run(["wmctrl", "-r", hmi_window_title, "-b", "remove,above"])
+    subprocess.run(["wmctrl", "-r", "opencpn", "-b", "add,above"])
+
+    # Timer to keep OpenCPN on top
+    opencpn_timer = QTimer()
+    opencpn_timer.timeout.connect(keep_opencpn_on_top)
+    opencpn_timer.start(1000)  # Check every 1 second
+
     ros_timer = QTimer()
     ros_timer.timeout.connect(lambda: rclpy.spin_once(node, timeout_sec=0.1))
     ros_timer.start(10)
 
-    sys.exit(app.exec_())
-    rclpy.shutdown()
+    try:
+        sys.exit(app.exec_())
+    finally:
+        opencpn_process.terminate()  # Ensure OpenCPN is closed when the app exits
+        rclpy.shutdown()
 
 
 if __name__ == "__main__":
