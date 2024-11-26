@@ -1,6 +1,8 @@
+simulator_in_the_loop: False               # This is the toggle for running with hardware or a simulator in the loop
+
 initial_conditions:
-  latitude: 62.485778
-  longitude: 6.11575
+  latitude: 62.469660
+  longitude: 6.240116
   heading: 0.0                            # Degrees
   nu: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]      # Initial velocity vector (surge, sway, heave, roll, pitch, yaw)
 
@@ -13,9 +15,16 @@ environmental_disturbances:
   current_variation: False
   wind_magnitude: 0.0
   wind_direction: 45                       # Degrees
-  wind_variation: True
+  wind_variation: False
 
 physical_parameters:
   rho_water: 1024.0
   gravity: 9.81
   rho_air: 1.23
+
+otter_interface:
+  ip: "10.0.5.1"                        # Wifi: 10.0.5.1, Radio: 192.168.53.2
+  port: 2009
+  connection_debug_messages: True
+  log_measurements_to_csv: False
+  publish_nmea_to_localhost: True

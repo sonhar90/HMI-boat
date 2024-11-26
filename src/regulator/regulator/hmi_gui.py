@@ -20,6 +20,7 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 import rclpy
 from ngc_interfaces.msg import Eta, Nu, ButtonControl, ThrusterSignals
+from ngc_interfaces.msg import Eta, Nu, ButtonControl, SystemMode
 import sys
 from ngc_utils.qos_profiles import default_qos_profile
 import ngc_utils.math_utils as mu
@@ -30,6 +31,7 @@ from regulator.hmi_thruster import ThrusterBar
 import subprocess
 import os
 import time
+
 
 
 class HMIWindow(QMainWindow):
@@ -159,17 +161,13 @@ class HMIWindow(QMainWindow):
         )
 
         # Publishers for eta_setpoint and nu_setpoint
-        self.eta_publisher_HMI = self.node.create_publisher(
-            Eta, "eta_setpoint_HMI", default_qos_profile
-        )
-        self.nu_publisher_HMI = self.node.create_publisher(
-            Nu, "nu_setpoint_HMI", default_qos_profile
-        )
-
+        self.eta_publisher_HMI = self.node.create_publisher(Eta, 'eta_setpoint_HMI', default_qos_profile)
+        self.nu_publisher_HMI = self.node.create_publisher(Nu, 'nu_setpoint_HMI', default_qos_profile)
+        
         # Publiser ButtonControl meldinger for knappetrykk
-        self.button_publisher = self.node.create_publisher(
-            ButtonControl, "button_control", default_qos_profile
-        )
+        self.button_publisher = self.node.create_publisher(ButtonControl, 'button_control', default_qos_profile)
+        self.systemmode_publisher = self.node.create_publisher(SystemMode, 'system_mode', default_qos_profile)   
+        
 
         # Subscribers for thruster setpoints
         self.node.create_subscription(
@@ -284,9 +282,20 @@ class HMIWindow(QMainWindow):
         button_msg = ButtonControl()
         button_msg.mode = mode
         self.button_publisher.publish(button_msg)
-        self.node.get_logger().info(
-            f"Knapp trykket: Publiserer melding {button_msg} til button_control."
-        )
+        self.node.get_logger().info(f"Knapp trykket: Publiserer melding {button_msg} til button_control.")
+
+        msg_sys = SystemMode()
+
+        if mode == 0:
+            
+            msg_sys.standby_mode = True
+            msg_sys.auto_mode    = False
+        else:
+            msg_sys.standby_mode = False
+            msg_sys.auto_mode    = True
+
+        self.systemmode_publisher.publish(msg_sys)  
+        
 
     def update_eta_feedback(self, msg):
         # Sjekk om psi-verdi er gyldig før konvertering

@@ -101,6 +101,32 @@ def create_vtg_message(u, v):
     
     return final_sentence
 
+def create_sog_cog_vtg_message(sog, cog):
+    """
+    Creates a VTG NMEA message for the track made good and ground speed based on provided SOG and COG.
+
+    :param sog: Speed over ground in knots.
+    :param cog: Course over ground in degrees (0-360).
+    :return: A string representing the VTG message with checksum.
+    """
+    # Ensure COG is within 0-360 degrees
+    if cog < 0:
+        cog += 360
+    elif cog > 360:
+        cog = cog % 360
+    
+    # Convert SOG to kilometers per hour (knots to km/h conversion factor is 1.852)
+    sog_kmh = sog * 1.852
+
+    # Construct the VTG sentence without the initial '$' and without the checksum
+    nmea_sentence_without_dollar = f"GPVTG,{cog:.2f},T,,M,{sog:.2f},N,{sog_kmh:.2f},K"
+
+    # Append the checksum to the sentence
+    final_sentence = append_checksum(nmea_sentence_without_dollar)
+
+    return final_sentence
+
+
 def create_rot_message(rate_of_turn):
     """
     Creates a ROT NMEA message indicating the rate of turn.

@@ -1,2 +1,8 @@
 bool standby_mode
 bool auto_mode
+bool test_normalized_force_mode
+bool test_rpm_output_mode 
+float32 fx_test
+float32 fz_test
+float32 rpm_strb_test
+float32 rpm_port_test
