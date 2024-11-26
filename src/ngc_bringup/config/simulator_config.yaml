@@ -1,8 +1,8 @@
 simulator_in_the_loop: False               # This is the toggle for running with hardware or a simulator in the loop
 
 initial_conditions:
-  latitude: 62.485778
-  longitude: 6.11575
+  latitude: 62.469660
+  longitude: 6.240116
   heading: 0.0                            # Degrees
   nu: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]      # Initial velocity vector (surge, sway, heave, roll, pitch, yaw)
 

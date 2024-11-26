@@ -157,11 +157,11 @@ def generate_launch_description():
 
     ld = LaunchDescription() 
     
-    #ld.add_action(sim_node)
-    #ld.add_action(gnss_node)
-    #ld.add_action(compass_node)
+    ld.add_action(sim_node)
+    ld.add_action(gnss_node)
+    ld.add_action(compass_node)
     #ld.add_action(anemometer_node)
-    #ld.add_action(propulsion_node)
+    ld.add_action(propulsion_node)
     #ld.add_action(hmi_node)
     ld.add_action(hmi_node_yaml_editor)
     ld.add_action(delayed_plotjuggler)
