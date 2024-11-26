@@ -1,0 +1,59 @@
+.
+├── build
+│   ├── COLCON_IGNORE
+│   ├── ngc_bringup
+│   ├── ngc_hmi
+│   ├── ngc_hull_sim
+│   ├── ngc_interfaces
+│   ├── ngc_propulsion_sim
+│   ├── ngc_sensor_sims
+│   ├── ngc_utils
+│   └── regulator
+├── file_tree.txt
+├── install
+│   ├── COLCON_IGNORE
+│   ├── local_setup.bash
+│   ├── local_setup.ps1
+│   ├── local_setup.sh
+│   ├── _local_setup_util_ps1.py
+│   ├── _local_setup_util_sh.py
+│   ├── local_setup.zsh
+│   ├── ngc_bringup
+│   ├── ngc_hmi
+│   ├── ngc_hull_sim
+│   ├── ngc_interfaces
+│   ├── ngc_propulsion_sim
+│   ├── ngc_sensor_sims
+│   ├── ngc_utils
+│   ├── regulator
+│   ├── setup.bash
+│   ├── setup.ps1
+│   ├── setup.sh
+│   └── setup.zsh
+├── log
+│   ├── build_2024-11-25_23-15-58
+│   ├── build_2024-11-26_00-28-08
+│   ├── build_2024-11-26_00-29-09
+│   ├── build_2024-11-26_00-31-29
+│   ├── build_2024-11-26_00-32-44
+│   ├── build_2024-11-26_00-53-48
+│   ├── build_2024-11-26_00-57-09
+│   ├── build_2024-11-26_01-02-36
+│   ├── build_2024-11-26_01-08-46
+│   ├── COLCON_IGNORE
+│   ├── latest -> latest_build
+│   ├── latest_build -> build_2024-11-26_01-08-46
+│   ├── latest_list -> list_2024-11-25_22-56-58
+│   └── list_2024-11-25_22-56-58
+└── src
+    ├── ngc_bringup
+    ├── ngc_hmi
+    ├── ngc_hull_sim
+    ├── ngc_interfaces
+    ├── ngc_propulsion_sim
+    ├── ngc_sensor_sims
+    ├── ngc_utils
+    ├── README.md
+    └── regulator
+
+42 directories, 15 files
