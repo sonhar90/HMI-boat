@@ -96,7 +96,7 @@ class Guide(Node):
         self.current_waypoint_index = 0  # Index of the current waypoint in the route
 
         # Waypoint tolerance in meters
-        self.waypoint_tolerance = 5.0  # Adjust as needed
+        self.waypoint_tolerance = 8.0  # Adjust as needed
 
         # Start control loop with the same timestep as the simulator
         self.timer = self.create_timer(self.step_size, self.step_control)
@@ -129,6 +129,8 @@ class Guide(Node):
     def waypoint_callback(self, msg):
         """Callback for receiving waypoints."""
         # Append waypoint to the route for track mode
+        if msg.name == "001":
+            self.route = []
         self.route.append(msg)
         # Update target waypoint for position mode
         self.target_waypoint = msg
@@ -204,8 +206,8 @@ class Guide(Node):
 
     def calculate_desired_speed(self, distance):
         """Calculate desired speed based on distance to waypoint."""
-        max_speed = 2.0  # Maximum speed in m/s
-        min_speed = 0.5  # Minimum speed in m/s
+        max_speed = 0.5  # Maximum speed in m/s
+        min_speed = 0.1  # Minimum speed in m/s
         return max(min_speed, min(distance * 0.1, max_speed))
 
     def calculate_distance_and_bearing(self, lat1, lon1, lat2, lon2):

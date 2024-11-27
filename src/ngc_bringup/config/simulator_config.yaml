@@ -1,4 +1,4 @@
-simulator_in_the_loop: False               # This is the toggle for running with hardware or a simulator in the loop
+simulator_in_the_loop: True               # This is the toggle for running with hardware or a simulator in the loop
 
 initial_conditions:
   latitude: 62.469660
@@ -23,8 +23,8 @@ physical_parameters:
   rho_air: 1.23
 
 otter_interface:
-  ip: "10.0.5.1"                        # Wifi: 10.0.5.1, Radio: 192.168.53.2
+  ip: "192.168.53.2"                        # Wifi: 10.0.5.1, Radio: 192.168.53.2
   port: 2009
-  connection_debug_messages: True
-  log_measurements_to_csv: False
+  connection_debug_messages: False
+  log_measurements_to_csv: True
   publish_nmea_to_localhost: True

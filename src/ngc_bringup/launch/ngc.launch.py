@@ -12,32 +12,28 @@ import yaml
 
 #: https://roboticscasual.com/tutorial-ros2-launch-files-all-you-need-to-know/
 def generate_launch_description():
-    
-     # Path to the simulator_config.yaml file
+
+    # Path to the simulator_config.yaml file
     simulator_config_file = os.path.join(
-        get_package_share_directory('ngc_bringup'),
-        'config',
-        'simulator_config.yaml'
+        get_package_share_directory("ngc_bringup"), "config", "simulator_config.yaml"
     )
-    
+
     # Load the YAML file
-    with open(simulator_config_file, 'r') as file:
+    with open(simulator_config_file, "r") as file:
         simulator_config = yaml.safe_load(file)
-    
+
     # Check if the 'simulator_in_the_loop' flag is True
-    simulator_in_the_loop = simulator_config.get('simulator_in_the_loop', False)
+    simulator_in_the_loop = simulator_config.get("simulator_in_the_loop", False)
 
     plotjuggler_config = os.path.join(
-        get_package_share_directory('ngc_bringup'),
-        'config',
-        'PlotJuggler_layout.xml'
+        get_package_share_directory("ngc_bringup"), "config", "PlotJuggler_layout.xml"
     )
-    
+
     sim_node = Node(
-        package    = "ngc_hull_sim", 
-        executable = "simulate",
-        name       = 'ngc_hull_sim',
-        #output    = 'screen'
+        package="ngc_hull_sim",
+        executable="simulate",
+        name="ngc_hull_sim",
+        # output    = 'screen'
     )
 
     propulsion_node = Node(
@@ -55,17 +51,6 @@ def generate_launch_description():
 
     anemometer_node = Node(
         package="ngc_sensor_sims", executable="anemometer", name="anemometer"
-    )
-
-    hmi_node = Node(
-        package="ngc_hmi", executable="ngc_hmi", name="hmi", output="screen"
-    )
-
-    hmi_node_autopilot = Node(
-        package="ngc_hmi",
-        executable="ngc_hmi_autopilot",
-        name="hmi_ap",
-        output="screen",
     )
 
     plotjuggler_node = Node(
@@ -101,56 +86,40 @@ def generate_launch_description():
 
     guide = Node(package="regulator", executable="guide", name="guide", output="screen")
 
-    hmi = Node(
+    hmi_gui_node = Node(
+        package="regulator", executable="hmi_gui", name="hmi_gui", output="screen"
+    )
+
+    waypoint_node = Node(
         package="regulator",
-        executable="hmi",
-        name="hmi",
-        # output      = 'screen'
+        executable="waypoint_controller",
+        name="waypoint_controller",
+        output="screen",
     )
 
-    hmi_gui_node    = Node(
-        package     ="regulator",
-        executable  ='hmi_gui',
-        name        ='hmi_gui',
-        output      ='screen'
-    )
-
-    waypoint_node   = Node(
-        package     ="regulator",
-        executable  ='waypoint_controller',
-        name        ='waypoint_controller',
-        output      ='screen'
-    )    
-    
     otter_interface = Node(
-        package     = "ngc_otter_interface", 
-        executable  = "otter_interface",    
-        name        = 'otter_interface',
-        output      = 'screen'
+        package="ngc_otter_interface",
+        executable="otter_interface",
+        name="otter_interface",
+        output="screen",
     )
 
-    delayed_plotjuggler= TimerAction(period= 3.0, actions=[plotjuggler_node])
-    delayed_kontroller= TimerAction(period= 2.0, actions=[regulator])
-    delayed_estimator= TimerAction(period= 1.0, actions=[estimator])
-    delayed_allokering= TimerAction(period= 3.0, actions=[allokering])
-    delayed_guide= TimerAction(period= 4.0, actions=[guide]) 
+    delayed_plotjuggler = TimerAction(period=3.0, actions=[plotjuggler_node])
+    delayed_kontroller = TimerAction(period=2.0, actions=[regulator])
+    delayed_estimator = TimerAction(period=1.0, actions=[estimator])
+    delayed_allokering = TimerAction(period=3.0, actions=[allokering])
+    delayed_guide = TimerAction(period=4.0, actions=[guide])
 
     ld = LaunchDescription()
 
-    ld.add_action(sim_node)
-    ld.add_action(gnss_node)
-    ld.add_action(compass_node)
     # ld.add_action(anemometer_node)
-    ld.add_action(propulsion_node)
-    # ld.add_action(hmi_node)
     ld.add_action(hmi_node_yaml_editor)
     ld.add_action(delayed_plotjuggler)
     ld.add_action(delayed_kontroller)
     ld.add_action(delayed_estimator)
     ld.add_action(delayed_allokering)
     ld.add_action(delayed_guide)
-    #ld.add_action(hmi)
-    ld.add_action(hmi_gui_node) 
+    ld.add_action(hmi_gui_node)
     ld.add_action(waypoint_node)
     ld.add_action(otter_interface)
 
