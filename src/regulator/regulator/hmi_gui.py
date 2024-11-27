@@ -1,4 +1,5 @@
 # hmi_gui.py
+
 from PyQt5.QtWidgets import (
     QMainWindow,
     QApplication,
@@ -12,40 +13,37 @@ from PyQt5.QtWidgets import (
     QSlider,
     QSizePolicy,
     QHBoxLayout,
-    QFrame,
     QButtonGroup,
 )
 from PyQt5.QtCore import Qt, QTimer
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 import rclpy
-from ngc_interfaces.msg import Eta, Nu, ButtonControl, ThrusterSignals
-from ngc_interfaces.msg import Eta, Nu, ButtonControl, SystemMode
+from ngc_interfaces.msg import Eta, Nu, ButtonControl, ThrusterSignals, SystemMode
 import sys
 from ngc_utils.qos_profiles import default_qos_profile
 import ngc_utils.math_utils as mu
 import numpy as np
-from ament_index_python.packages import get_package_share_directory
 from regulator.hmi_compass import CompassWidget
 from regulator.hmi_thruster import ThrusterBar
+from regulator.hmi_controls import HeadingControlWidget, SpeedControlWidget
 import subprocess
-import os
 import time
-
+import matplotlib.pyplot as plt
 
 
 class HMIWindow(QMainWindow):
     def __init__(self, ros_node):
         super().__init__()
 
-        # Lagre ROS-noden som en klasseattributt
+        # Store ROS node
         self.node = ros_node
 
-        # GUI-oppsett
+        # GUI setup
         self.setWindowTitle("Ship Control HMI")
         self.setGeometry(0, 0, 1850, 1000)
 
-        # Sentral widget og layout med mørk bakgrunn
+        # Central widget and layout with dark background
         self.central_widget = QWidget()
         self.central_widget.setStyleSheet("background-color: #1E1E1E;")
         self.setCentralWidget(self.central_widget)
@@ -59,32 +57,45 @@ class HMIWindow(QMainWindow):
         for i in range(6):
             self.grid_layout.setRowStretch(i, 1)
 
-        # Initialize lists to store data for graphs
-        self.eta_setpoints_HMI = []
-        self.eta_sim_values = []
+        # Initialize lists to store data for graphs with timestamps
+        self.eta_setpoints_HMI = []  # List of tuples (timestamp, value)
+        self.eta_hat_values = []
         self.nu_setpoints_HMI = []
-        self.nu_sim_values = []
+        self.nu_hat_values = []
         self.thruster_1_setpoints = []
         self.thruster_1_feedback = []
 
-        # Heading og speed control
-        heading_label, self.heading_dial, self.heading_display = (
+        # Initialize start time for timestamps
+        self.start_time = time.time()
+
+        # Heading and speed control
+        # Heading control widget
+        self.heading_control = HeadingControlWidget()
+        self.heading_control.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.grid_layout.addWidget(self.heading_control, 4, 4, 2, 1)
+        self.heading_control.headingChanged.connect(self.update_heading_setpoint)
+
+        # Speed control widget
+        self.speed_control = SpeedControlWidget()
+        self.speed_control.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.grid_layout.addWidget(self.speed_control, 4, 3, 2, 1)
+        self.speed_control.speedChanged.connect(self.update_surge_setpoint)
+
+        """heading_label, self.heading_dial, self.heading_display = (
             self.add_heading_control()
         )
         self.heading_dial.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.heading_display.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        # self.grid_layout.addWidget(heading_label, 3, 4)
         self.grid_layout.addWidget(self.heading_display, 4, 4)
         self.grid_layout.addWidget(self.heading_dial, 5, 4)
 
         speed_label, self.speed_slider, self.speed_display = self.add_speed_control()
         self.speed_slider.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.speed_display.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        # self.grid_layout.addWidget(speed_label, 3, 3)
         self.grid_layout.addWidget(self.speed_display, 4, 3)
-        self.grid_layout.addWidget(self.speed_slider, 5, 3)
+        self.grid_layout.addWidget(self.speed_slider, 5, 3)"""
 
-        # Tre grafer for kontinuerlig data
+        # Three graphs for continuous data
         self.graph_canvas_1 = self.add_plotjuggler_graph(
             "Eta Setpoint vs Sim", "Heading (degrees)"
         )
@@ -92,7 +103,7 @@ class HMIWindow(QMainWindow):
             "Nu Setpoint vs Sim", "Speed (m/s)"
         )
         self.graph_canvas_3 = self.add_plotjuggler_graph(
-            "Thruster 1 Setpoint vs Sim", "Thruster Output"
+            "Thruster 1 Setpoint vs Feedback", "Thruster Output"
         )
 
         self.graph_canvas_1.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
@@ -103,7 +114,7 @@ class HMIWindow(QMainWindow):
         self.grid_layout.addWidget(self.graph_canvas_2, 2, 6, 2, 2)
         self.grid_layout.addWidget(self.graph_canvas_3, 4, 6, 2, 2)
 
-        # Thruster-knapper
+        # Thruster buttons
         thruster_buttons_layout = self.add_thruster_buttons()
         self.grid_layout.addLayout(thruster_buttons_layout, 4, 5, 2, 1)
 
@@ -142,32 +153,39 @@ class HMIWindow(QMainWindow):
         self.compass_widget = CompassWidget()
         self.grid_layout.addWidget(self.compass_widget, 4, 1, 2, 2)
 
-        # Timer for kontinuerlig oppdatering
+        # Timer for continuous updates
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_graphs)
         self.timer.start(100)
 
-        # ROS2 abonnenter og publisenter
+        # ROS2 subscribers and publishers
         # Initialize setpoints
         self.heading_setpoint = 0.5  # Initial heading setpoint
         self.surge_setpoint = 0.0  # Initial surge speed setpoint in knots
 
-        # Subscribers to eta_sim and nu_sim
+        # Subscribers to eta_hat and nu_hat
         self.node.create_subscription(
-            Eta, "eta_sim", self.update_eta_feedback, default_qos_profile
+            Eta, "eta_hat", self.update_eta_feedback, default_qos_profile
         )
         self.node.create_subscription(
-            Nu, "nu_sim", self.update_nu_feedback, default_qos_profile
+            Nu, "nu_hat", self.update_nu_feedback, default_qos_profile
         )
 
         # Publishers for eta_setpoint and nu_setpoint
-        self.eta_publisher_HMI = self.node.create_publisher(Eta, 'eta_setpoint_HMI', default_qos_profile)
-        self.nu_publisher_HMI = self.node.create_publisher(Nu, 'nu_setpoint_HMI', default_qos_profile)
-        
-        # Publiser ButtonControl meldinger for knappetrykk
-        self.button_publisher = self.node.create_publisher(ButtonControl, 'button_control', default_qos_profile)
-        self.systemmode_publisher = self.node.create_publisher(SystemMode, 'system_mode', default_qos_profile)   
-        
+        self.eta_publisher_HMI = self.node.create_publisher(
+            Eta, "eta_setpoint_HMI", default_qos_profile
+        )
+        self.nu_publisher_HMI = self.node.create_publisher(
+            Nu, "nu_setpoint_HMI", default_qos_profile
+        )
+
+        # Publisher for ButtonControl messages
+        self.button_publisher = self.node.create_publisher(
+            ButtonControl, "button_control", default_qos_profile
+        )
+        self.systemmode_publisher = self.node.create_publisher(
+            SystemMode, "system_mode", default_qos_profile
+        )
 
         # Subscribers for thruster setpoints
         self.node.create_subscription(
@@ -208,63 +226,6 @@ class HMIWindow(QMainWindow):
         self.publish_timer.timeout.connect(self.publish_setpoints_continuous)
         self.publish_timer.start(100)  # Publishing every 100 ms
 
-    def add_heading_control(self):
-        heading_label = QLabel("Heading Control")
-        heading_label.setAlignment(Qt.AlignCenter)
-        heading_label.setStyleSheet("color: white;")
-
-        self.heading_dial = QDial()
-        self.heading_dial.setMinimum(0)
-        self.heading_dial.setMaximum(360)
-        self.heading_dial.setWrapping(True)
-        self.heading_dial.setValue(
-            180
-        )  # Sett startverdien til 180 for å vise nord som 0
-
-        self.heading_display = QLCDNumber()
-        self.heading_display.setSegmentStyle(QLCDNumber.Flat)
-        self.heading_display.setDigitCount(6)
-        self.heading_display.setStyleSheet("color: #7DF9FF;")
-        # Initial display value remapped to north (0)
-        self.heading_display.display(self.remap_dial_value(self.heading_dial.value()))
-
-        # Connect valueChanged signal to display the remapped dial value and update setpoint
-        self.heading_dial.valueChanged.connect(
-            lambda value: (
-                self.heading_display.display(self.remap_dial_value(value)),
-                self.update_heading_setpoint(self.remap_dial_value(value)),
-            )
-        )
-
-        return heading_label, self.heading_dial, self.heading_display
-
-    def remap_dial_value(self, value):
-        remapped_value = (value - 180) % 360
-        return remapped_value
-
-    def add_speed_control(self):
-        speed_label = QLabel("Speed Control")
-        speed_label.setAlignment(Qt.AlignCenter)
-        speed_label.setStyleSheet("color: white;")
-
-        self.speed_slider = QSlider(Qt.Vertical)
-        self.speed_slider.setMinimum(-6)
-        self.speed_slider.setMaximum(6)
-        self.speed_slider.setValue(0)
-        self.speed_display = QLCDNumber()
-        self.speed_display.setSegmentStyle(QLCDNumber.Flat)
-        self.speed_display.setDigitCount(2)
-        self.speed_display.setStyleSheet("color: lightgrey;")
-        self.speed_display.display(self.speed_slider.value())
-
-        self.speed_slider.valueChanged.connect(
-            lambda value: (
-                self.speed_display.display(value),
-                self.update_surge_setpoint(value),
-            )
-        )
-        return speed_label, self.speed_slider, self.speed_display
-
     def add_plotjuggler_graph(self, title, ylabel):
         fig = Figure(facecolor="#2E2E2E")
         canvas = FigureCanvas(fig)
@@ -278,50 +239,49 @@ class HMIWindow(QMainWindow):
         return canvas
 
     def publish_button_mode(self, mode):
-        """Publiser en ButtonControl melding med gitt modus"""
+        """Publish a ButtonControl message with the given mode"""
         button_msg = ButtonControl()
         button_msg.mode = mode
         self.button_publisher.publish(button_msg)
-        self.node.get_logger().info(f"Knapp trykket: Publiserer melding {button_msg} til button_control.")
+        self.node.get_logger().info(
+            f"Button pressed: Publishing message {button_msg} to button_control."
+        )
 
         msg_sys = SystemMode()
 
         if mode == 0:
-            
             msg_sys.standby_mode = True
-            msg_sys.auto_mode    = False
+            msg_sys.auto_mode = False
         else:
             msg_sys.standby_mode = False
-            msg_sys.auto_mode    = True
+            msg_sys.auto_mode = True
 
-        self.systemmode_publisher.publish(msg_sys)  
-        
+        self.systemmode_publisher.publish(msg_sys)
 
     def update_eta_feedback(self, msg):
-        # Sjekk om psi-verdi er gyldig før konvertering
+        current_time = time.time() - self.start_time
+        # Check if psi value is valid before conversion
         if not np.isfinite(msg.psi):
             self.node.get_logger().error(f"Invalid psi value received: {msg.psi}")
             return
 
-        # Konverter psi-verdi fra radianer til grader
+        # Convert psi from radians to degrees
         psi_in_degrees = np.degrees(msg.psi)
-        self.eta_sim_values.append(psi_in_degrees)
+        self.eta_hat_values.append((current_time, psi_in_degrees))
+
+        # Limit storage length to 100 elements
+        if len(self.eta_hat_values) > 100:
+            self.eta_hat_values.pop(0)
 
         # Update CompassWidget's feedback
         self.compass_widget.set_feedback(psi_in_degrees)
         self.compass_widget.set_setpoint(self.heading_setpoint)
 
-        # Begrens lagringslengde til 100 elementer
-        if len(self.eta_sim_values) > 100:
-            self.eta_sim_values.pop(0)
-
-        # Logging av mottatt psi-verdi
-        # self.node.get_logger().info(f"Received eta_sim psi (degrees): {psi_in_degrees}")
-
     def update_nu_feedback(self, msg):
-        self.nu_sim_values.append(msg.u)
-        if len(self.nu_sim_values) > 100:
-            self.nu_sim_values.pop(0)
+        current_time = time.time() - self.start_time
+        self.nu_hat_values.append((current_time, msg.u))
+        if len(self.nu_hat_values) > 100:
+            self.nu_hat_values.pop(0)
 
     def update_heading_setpoint(self, value):
         self.heading_setpoint = value
@@ -330,7 +290,9 @@ class HMIWindow(QMainWindow):
         self.surge_setpoint = value
 
     def publish_setpoints_continuous(self):
-        # Sjekk at heading_setpoint og surge_setpoint er gyldige tall
+        current_time = time.time() - self.start_time
+
+        # Check that heading_setpoint and surge_setpoint are valid numbers
         if not np.isfinite(self.heading_setpoint) or not np.isfinite(
             self.surge_setpoint
         ):
@@ -339,7 +301,7 @@ class HMIWindow(QMainWindow):
 
         eta_msg = Eta()
 
-        # Map heading_setpoint til [-pi, pi] og sjekk gyldighet
+        # Map heading_setpoint to [-pi, pi] and check validity
         mapped_psi = mu.mapToPiPi(np.deg2rad(self.heading_setpoint))
         if not np.isfinite(mapped_psi):
             self.node.get_logger().error(f"Mapped psi is invalid: {mapped_psi}")
@@ -347,83 +309,99 @@ class HMIWindow(QMainWindow):
 
         eta_msg.psi = float(mapped_psi)
         self.eta_publisher_HMI.publish(eta_msg)
-        self.eta_setpoints_HMI.append(self.heading_setpoint)
+        self.eta_setpoints_HMI.append((current_time, self.heading_setpoint))
         if len(self.eta_setpoints_HMI) > 100:
             self.eta_setpoints_HMI.pop(0)
 
-        # Logging av publisert eta_setpoint
-        # self.node.get_logger().info(f"Published eta_setpoint_HMI (psi in degrees): {self.heading_setpoint}")
-
         nu_msg = Nu()
-        nu_msg.u = float(self.surge_setpoint) * 0.514444
+        nu_msg.u = float(self.surge_setpoint) * 0.514444  # Convert knots to m/s
         self.nu_publisher_HMI.publish(nu_msg)
-        self.nu_setpoints_HMI.append(nu_msg.u)
+        self.nu_setpoints_HMI.append((current_time, nu_msg.u))
         if len(self.nu_setpoints_HMI) > 100:
             self.nu_setpoints_HMI.pop(0)
 
-        # Logging av publisert surge_setpoint
-        # self.node.get_logger().info(f"Published nu_setpoint_HMI (u in m/s): {nu_msg.u}")
-
     def update_graphs(self):
-        if self.eta_setpoints_HMI and self.eta_sim_values:
+        current_time = time.time() - self.start_time
+        window_size = 10  # Time window in seconds
+        min_time = current_time - window_size
+        # Update Eta Graph
+        if self.eta_setpoints_HMI and self.eta_hat_values:
             ax1 = self.graph_canvas_1.figure.get_axes()[0]
             ax1.clear()
-            ax1.plot(
-                range(len(self.eta_setpoints_HMI)),
-                self.eta_setpoints_HMI,
-                label="Setpoint",
-                color="#39FF14",
-            )
-            ax1.plot(
-                range(len(self.eta_sim_values)),
-                self.eta_sim_values,
-                label="Simulated",
-                color="#FF073A",
-            )
+
+            # Filter data within the time window
+            setpoint_data = [(t, v) for t, v in self.eta_setpoints_HMI if t >= min_time]
+            sim_data = [(t, v) for t, v in self.eta_hat_values if t >= min_time]
+
+            if setpoint_data:
+                times_setpoint, values_setpoint = zip(*setpoint_data)
+                ax1.plot(
+                    times_setpoint, values_setpoint, label="Setpoint", color="#39FF14"
+                )
+            if sim_data:
+                times_sim, values_sim = zip(*sim_data)
+                ax1.plot(times_sim, values_sim, label="Feedback", color="#FF073A")
+
             ax1.legend(loc="upper right")
-            ax1.set_title("Eta Setpoint vs Sim", color="white")
+            ax1.set_title("Eta Setpoint vs Feedback", color="white")
+            ax1.set_xlabel("Time (s)", color="white")
+            ax1.tick_params(axis="x", colors="white")
+            ax1.tick_params(axis="y", colors="white")
+            ax1.set_xlim(min_time, current_time)  # Set x-axis limits to the time window
             self.graph_canvas_1.draw()
 
-        if self.nu_setpoints_HMI and self.nu_sim_values:
+        # Update Nu Graph
+        if self.nu_setpoints_HMI and self.nu_hat_values:
             ax2 = self.graph_canvas_2.figure.get_axes()[0]
             ax2.clear()
-            ax2.plot(
-                range(len(self.nu_setpoints_HMI)),
-                self.nu_setpoints_HMI,
-                label="Setpoint",
-                color="#39FF14",
-            )
-            ax2.plot(
-                range(len(self.nu_sim_values)),
-                self.nu_sim_values,
-                label="Simulated",
-                color="#FF073A",
-            )
+
+            # Filter data within the time window
+            setpoint_data = [(t, v) for t, v in self.nu_setpoints_HMI if t >= min_time]
+            sim_data = [(t, v) for t, v in self.nu_hat_values if t >= min_time]
+
+            if setpoint_data:
+                times_setpoint, values_setpoint = zip(*setpoint_data)
+                ax2.plot(
+                    times_setpoint, values_setpoint, label="Setpoint", color="#39FF14"
+                )
+            if sim_data:
+                times_sim, values_sim = zip(*sim_data)
+                ax2.plot(times_sim, values_sim, label="Feedback", color="#FF073A")
+
             ax2.legend(loc="upper right")
-            ax2.set_title("Nu Setpoint vs Sim", color="white")
+            ax2.set_title("Nu Setpoint vs Feedback", color="white")
+            ax2.set_xlabel("Time (s)", color="white")
+            ax2.tick_params(axis="x", colors="white")
+            ax2.tick_params(axis="y", colors="white")
+            ax2.set_xlim(min_time, current_time)  # Set x-axis limits to the time window
             self.graph_canvas_2.draw()
 
+        # Update Thruster Graph
         if self.thruster_1_setpoints and self.thruster_1_feedback:
             ax3 = self.graph_canvas_3.figure.get_axes()[0]
             ax3.clear()
-            ax3.plot(
-                range(len(self.thruster_1_setpoints)),
-                self.thruster_1_setpoints,
-                label="Setpoint",
-                color="#39FF14",
-            )
-            ax3.plot(
-                range(len(self.thruster_1_feedback)),
-                self.thruster_1_feedback,
-                label="Feedback",
-                color="#FF073A",
-            )
+
+            # Filter data within the time window
+            setpoint_data = [
+                (t, v) for t, v in self.thruster_1_setpoints if t >= min_time
+            ]
+            sim_data = [(t, v) for t, v in self.thruster_1_feedback if t >= min_time]
+
+            if setpoint_data:
+                times_setpoint, values_setpoint = zip(*setpoint_data)
+                ax3.plot(
+                    times_setpoint, values_setpoint, label="Setpoint", color="#39FF14"
+                )
+            if sim_data:
+                times_sim, values_sim = zip(*sim_data)
+                ax3.plot(times_sim, values_sim, label="Feedback", color="#FF073A")
+
             ax3.legend(loc="upper right")
-            ax3.set_title("Thruster 1 Setpoint vs Sim", color="white")
-            ax3.set_ylabel("Thruster Output", color="white")
-            ax3.set_xlabel("Time Steps", color="white")
+            ax3.set_title("Thruster Setpoint vs Feedback", color="white")
+            ax3.set_xlabel("Time (s)", color="white")
             ax3.tick_params(axis="x", colors="white")
-            ax3.tick_params(axis="y", colors="white")
+            ax2.tick_params(axis="y", colors="white")
+            ax2.set_xlim(min_time, current_time)  # Set x-axis limits to the time window
             self.graph_canvas_3.draw()
 
     def add_thruster_buttons(self):
@@ -461,14 +439,31 @@ class HMIWindow(QMainWindow):
             self.button_group.addButton(button)
 
         exit_button = QPushButton("Exit")
+        exit_button.setStyleSheet(
+            """
+            QPushButton {
+            background-color: red;
+            color: white;
+            border-radius: 10px;
+            border: 2px solid #ffffff;
+            padding: 10px;
+            font-size: 14px;
+            font-weight: bold;
+            }
+            QPushButton:hover {
+            background-color: darkred;
+            }
+            """
+        )
         exit_button.clicked.connect(self.close)
         button_layout.addWidget(exit_button)
 
         return button_layout
 
     def update_thruster1_setpoint(self, msg):
+        current_time = time.time() - self.start_time
         self.thruster1_setpoint = msg.rps
-        self.thruster_1_setpoints.append(self.thruster1_setpoint)
+        self.thruster_1_setpoints.append((current_time, self.thruster1_setpoint))
         if len(self.thruster_1_setpoints) > 100:
             self.thruster_1_setpoints.pop(0)
         self.thruster1_bar.set_values(
@@ -482,8 +477,9 @@ class HMIWindow(QMainWindow):
         )
 
     def update_thruster1_feedback(self, msg):
+        current_time = time.time() - self.start_time
         self.thruster1_feedback = msg.rps
-        self.thruster_1_feedback.append(self.thruster1_feedback)
+        self.thruster_1_feedback.append((current_time, self.thruster1_feedback))
         if len(self.thruster_1_feedback) > 100:
             self.thruster_1_feedback.pop(0)
         self.thruster1_bar.set_values(

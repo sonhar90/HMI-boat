@@ -92,12 +92,12 @@ class ThrusterBar(QFrame):
         )
 
         # Draw outline
-        pen = QPen(Qt.white, 2)
+        pen = QPen(Qt.black, 2)
         painter.setPen(pen)
         painter.drawRect(rect)
 
         # Draw thruster ID at the top
-        painter.setPen(QPen(Qt.white))
+        painter.setPen(QPen(Qt.black))
         painter.drawText(
             rect, Qt.AlignTop | Qt.AlignHCenter, f"Thruster {self.thruster_id}"
         )
