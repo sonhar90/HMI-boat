@@ -154,10 +154,10 @@ class HMIWindow(QMainWindow):
 
         # Subscribers to eta_sim and nu_sim
         self.node.create_subscription(
-            Eta, "eta_sim", self.update_eta_feedback, default_qos_profile
+            Eta, "eta_hat", self.update_eta_feedback, default_qos_profile
         )
         self.node.create_subscription(
-            Nu, "nu_sim", self.update_nu_feedback, default_qos_profile
+            Nu, "nu_hat", self.update_nu_feedback, default_qos_profile
         )
 
         # Publishers for eta_setpoint and nu_setpoint

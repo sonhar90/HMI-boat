@@ -53,9 +53,9 @@ class Guide(Node):
 
         # Initialize variables for Track mode
         self.route = []
-        self.current_waypoint_index = 0
         self.route_received = False
         self.track_completed = False  # Flag to indicate route completion
+        self.current_waypoint_index = 0  # Index of the current waypoint in the route
 
         # Waypoint tolerance in meters
         self.waypoint_tolerance = 5.0  # Adjust as needed
@@ -75,13 +75,19 @@ class Guide(Node):
 
     def button_control_callback(self, msg):
         """Callback for button control messages indicating mode selection."""
+        previous_mode = self.current_mode
         self.current_mode = msg.mode
         self.get_logger().info(f"Button control mode set to: {self.current_mode}")
 
         # Reset track variables when switching modes
-        if self.current_mode != 3:
-            self.current_waypoint_index = 0
-            self.track_completed = False
+        if self.current_mode != previous_mode:
+            if self.current_mode == 3:
+                # Entering Track Mode
+                self.track_completed = False
+            else:
+                # Reset track variables when leaving Track Mode
+                self.track_completed = False
+                self.current_waypoint_index = 0
 
     def waypoint_callback(self, msg):
         """Callback for receiving the target waypoint."""
@@ -91,9 +97,9 @@ class Guide(Node):
     def route_callback(self, msg):
         """Callback for receiving the route (list of waypoints)."""
         self.route = msg.waypoints  # Assuming msg.waypoints is a list of Waypoint messages
-        self.current_waypoint_index = 0  # Reset index when a new route is received
         self.route_received = True
         self.track_completed = False
+        self.current_waypoint_index = 0  # Reset index
         self.get_logger().info(f"Received new route with {len(self.route)} waypoints.")
 
     def gnss_callback(self, msg):
@@ -116,16 +122,16 @@ class Guide(Node):
         # Calculate distance and bearing to the target
         distance, bearing = self.calculate_distance_and_bearing(current_lat, current_lon, target_lat, target_lon)
 
-        # Check if the vessel has reached the waypoint
+        # Check if the vessel is within the desired distance from the waypoint (5 meters away)
         if distance <= self.waypoint_tolerance:
-            self.get_logger().info("Waypoint reached. Stopping vessel.")
+            self.get_logger().info("Within desired distance from waypoint. Holding position.")
             desired_speed = 0.0
-            # Optionally switch mode or handle waypoint completion
+            # Optionally, set desired heading to current heading to maintain orientation
+            return bearing, desired_speed
         else:
             # Dynamic speed profile
-            desired_speed = self.calculate_desired_speed(distance)
-
-        return bearing, desired_speed
+            desired_speed = self.calculate_desired_speed(distance - self.waypoint_tolerance)  # Adjust distance
+            return bearing, desired_speed
 
     def calculate_track_setpoints(self):
         """Calculate heading and speed setpoints to follow the route."""
@@ -133,14 +139,14 @@ class Guide(Node):
             self.get_logger().warning("Track Mode: Route or current position not available.")
             return None, None
 
-        # Check if all waypoints have been reached
-        if self.current_waypoint_index >= len(self.route):
-            self.get_logger().info("Track Mode: All waypoints reached. Switching to position hold.")
+        if not self.route or self.current_waypoint_index >= len(self.route):
+            self.get_logger().info("Track Mode: Route completed.")
             self.track_completed = True
             return None, None
 
         # Get the current waypoint
         target_waypoint = self.route[self.current_waypoint_index]
+        self.get_logger().info(f"Track Mode: Navigating to waypoint {self.current_waypoint_index + 1}/{len(self.route)} at lat: {target_waypoint.latitude}, lon: {target_waypoint.longitude}")
 
         # Calculate distance and bearing to the current waypoint
         current_lat = self.current_position.lat
@@ -154,20 +160,19 @@ class Guide(Node):
         # Check if we have reached the waypoint
         if distance <= self.waypoint_tolerance:
             self.get_logger().info(f"Track Mode: Waypoint {self.current_waypoint_index + 1} reached.")
-            self.current_waypoint_index += 1  # Move to the next waypoint
+            self.current_waypoint_index += 1  # Move to next waypoint
             if self.current_waypoint_index >= len(self.route):
-                self.get_logger().info("Track Mode: Final waypoint reached. Holding position.")
+                self.get_logger().info("Track Mode: Route completed.")
                 self.track_completed = True
                 return None, None
             else:
-                # Update target_waypoint for the next iteration
+                # Continue to next waypoint
                 target_waypoint = self.route[self.current_waypoint_index]
                 distance, bearing = self.calculate_distance_and_bearing(
                     current_lat, current_lon, target_waypoint.latitude, target_waypoint.longitude)
 
         # Calculate desired speed
         desired_speed = self.calculate_desired_speed(distance)
-
         return bearing, desired_speed
 
     def calculate_desired_speed(self, distance):
@@ -208,7 +213,6 @@ class Guide(Node):
         """Control loop that runs based on the button mode from HMI."""
         if self.current_mode == 0:  # Standby
             self.get_logger().info("Standby: Stopping eta and nu setpoints.")
-            # Optionally, set speed to zero or send stop command
             self.publish_zero_setpoints()
 
         elif self.current_mode == 1:  # Position
@@ -227,14 +231,9 @@ class Guide(Node):
             self.get_logger().info("Sail: Forwarding eta and nu setpoints from HMI.")
 
         elif self.current_mode == 3:  # Track
-            # Implement Track mode handling
             if self.track_completed:
                 self.get_logger().info("Track Mode: Route completed. Holding position.")
-                # Switch to Position mode to hold position at the last waypoint
-                self.current_mode = 1  # Switch to Position mode
-                self.target_waypoint = Waypoint()
-                self.target_waypoint.latitude = self.current_position.lat
-                self.target_waypoint.longitude = self.current_position.lon
+                self.publish_zero_setpoints()
             else:
                 desired_heading, desired_speed = self.calculate_track_setpoints()
                 if desired_heading is not None and desired_speed is not None:
