@@ -61,6 +61,7 @@ class WaypointListener(Node):
             self.get_logger().debug(f'Unknown NMEA message received: {message}')
 
     def parse_ecwpl(self, message):
+        self.get_logger().info(f"parse_ecwpl called with message: {message}")
         fields = message.split(',')
         if len(fields) >= 6:
             lat_raw = fields[1]  # Raw latitude (NMEA format)
@@ -98,71 +99,74 @@ class WaypointListener(Node):
             self.waypoint_publisher.publish(waypoint_msg)
 
     def parse_ecrte(self, message):
-        """ Parse the ECRTE (Route) message, reconstruct the route if split into multiple parts """
         fields = message.split(',')
-
+        self.get_logger().info(f'Parsing ECRTE message: {message}')
+    
         if len(fields) >= 5:
             current_part = int(fields[1])  # Current part of the route message
             total_parts = int(fields[2])   # Total number of parts
             route_name = fields[4]         # Route name
-
-            # Handle the waypoints and the last waypoint with the checksum
-            waypoints = fields[5:-1]  # Extract all waypoints except the last one
-
-            # Now handle the last waypoint, which includes the checksum
+    
+            # Log the parsed fields
+            self.get_logger().info(f'Route name: {route_name}, Part {current_part} of {total_parts}')
+            self.get_logger().info(f'Fields: {fields}')
+    
+            # Handle waypoints and the last waypoint
+            waypoints = fields[5:-1]
             last_waypoint_with_checksum = fields[-1]
-            last_waypoint, _ = last_waypoint_with_checksum.split('*')  # Split by '*' to separate the checksum
-
-            waypoints.append(last_waypoint)  # Add the last waypoint to the list
-
-            # If this is the first part of the route (or a new route), reset the current route data
+            last_waypoint, _ = last_waypoint_with_checksum.split('*')
+            waypoints.append(last_waypoint)
+    
+            # Log the waypoints in this part
+            self.get_logger().info(f'Waypoints in this part: {waypoints}')
+    
             if self.route_name != route_name or current_part == 1:
+                self.get_logger().info(f'New route detected: {route_name}, resetting route data.')
                 self.route_name = route_name
                 self.route_waypoints = []  # Reset waypoint list for the new route
                 self.total_parts = total_parts
                 self.current_part = 0
-
-            # Ensure all waypoints in this segment are added without overwriting previous segments
+    
+            # Extend the route with the new waypoints
             self.route_waypoints.extend(waypoints)
             self.current_part = current_part
-
-            self.get_logger().info(f'Parsed route segment {current_part}/{total_parts} for {route_name} with waypoints: {waypoints}')
-
-            # If we've received all parts, process the full route
+    
+            # Log the current state of the route
+            self.get_logger().info(f'Current route waypoints: {self.route_waypoints}')
+    
             if self.current_part == self.total_parts:
                 self.process_full_route()
 
     def process_full_route(self):
-        self.get_logger().info(f'Full route "{self.route_name}" received with waypoints: {self.route_waypoints}')
-
-        # Create and populate the Route message
+        self.get_logger().info(f'Publishing full route: {self.route_name}')
+        for wp_name in self.route_waypoints:
+            lat, lon = self.waypoint_dict.get(wp_name, (None, None))
+            self.get_logger().info(f'Waypoint: {wp_name}, lat = {lat}, lon = {lon}')
+        
         route_msg = Route()
         route_msg.route_name = self.route_name
 
         for wp_name in self.route_waypoints:
             waypoint_msg = Waypoint()
             waypoint_msg.name = wp_name
-
-            # Lookup lat/lon from waypoint_dict
-            if wp_name in self.waypoint_dict:
-                waypoint_msg.latitude, waypoint_msg.longitude = self.waypoint_dict[wp_name]
-            else:
-                # If waypoint not found, log a warning and skip this waypoint
-                self.get_logger().warn(f'Coordinates for waypoint "{wp_name}" not found. Skipping.')
-                continue  # Skip adding this waypoint to the route
-
+            waypoint_msg.latitude, waypoint_msg.longitude = self.waypoint_dict.get(wp_name, (None, None))
+            if waypoint_msg.latitude is None or waypoint_msg.longitude is None:
+                self.get_logger().error(f'Missing data for waypoint {wp_name}')
+                continue
             route_msg.waypoints.append(waypoint_msg)
 
+        self.route_publisher.publish(route_msg)
+        self.get_logger().info(f'Published route: {route_msg.route_name} with {len(route_msg.waypoints)} waypoints.')
+
+    
+        # Add logging before publishing
+        self.get_logger().info(f'Publishing route: {route_msg.route_name}, with {len(route_msg.waypoints)} waypoints.')
+        for wp in route_msg.waypoints:
+            self.get_logger().info(f'Waypoint: {wp.name}, lat = {wp.latitude}, lon = {wp.longitude}')
+    
         # Publish the completed Route message
         self.route_publisher.publish(route_msg)
-        self.get_logger().info(f'Published route "{self.route_name}" with {len(route_msg.waypoints)} waypoints.')
-
-        # Reset the route data
-        self.route_name = None
-        self.route_waypoints = []
-        self.total_parts = 0
-        self.current_part = 0
-        self.waypoint_dict.clear()  # Clear the dictionary for new waypoints
+        self.get_logger().info(f'Route "{self.route_name}" successfully published.')
 
 def main(args=None):
     rclpy.init(args=args)

@@ -32,8 +32,6 @@ class Guide(Node):
 
         # Subscribe to target waypoint from waypoint_controller
         self.waypoint_sub = self.create_subscription(Waypoint, 'waypoint', self.waypoint_callback, default_qos_profile)
-        # Subscribe to route from waypoint_controller
-        self.route_sub = self.create_subscription(Route, 'route', self.route_callback, default_qos_profile)
 
         # Subscribe to current position from GNSS node
         self.gnss_sub = self.create_subscription(GNSS, 'gnss_measurement', self.gnss_callback, default_qos_profile)
@@ -52,8 +50,7 @@ class Guide(Node):
         self.current_position = None
 
         # Initialize variables for Track mode
-        self.route = []
-        self.route_received = False
+        self.route = []  # Store waypoints for track mode
         self.track_completed = False  # Flag to indicate route completion
         self.current_waypoint_index = 0  # Index of the current waypoint in the route
 
@@ -81,8 +78,7 @@ class Guide(Node):
 
         # Reset track variables when switching modes
         if self.current_mode != previous_mode:
-            if self.current_mode == 3:
-                # Entering Track Mode
+            if self.current_mode == 3:  # Entering Track Mode
                 self.track_completed = False
             else:
                 # Reset track variables when leaving Track Mode
@@ -90,22 +86,16 @@ class Guide(Node):
                 self.current_waypoint_index = 0
 
     def waypoint_callback(self, msg):
-        """Callback for receiving the target waypoint."""
+        """Callback for receiving waypoints."""
+        # Append waypoint to the route for track mode
+        self.route.append(msg)
+        # Update target waypoint for position mode
         self.target_waypoint = msg
-        self.get_logger().info(f"Received target waypoint: lat = {msg.latitude}, lon = {msg.longitude}")
-
-    def route_callback(self, msg):
-        """Callback for receiving the route (list of waypoints)."""
-        self.route = msg.waypoints  # Assuming msg.waypoints is a list of Waypoint messages
-        self.route_received = True
-        self.track_completed = False
-        self.current_waypoint_index = 0  # Reset index
-        self.get_logger().info(f"Received new route with {len(self.route)} waypoints.")
+        self.get_logger().info(f"Added waypoint to route: lat = {msg.latitude}, lon = {msg.longitude}, name = {msg.name}")
 
     def gnss_callback(self, msg):
         """Callback for receiving the current GNSS position."""
         self.current_position = msg
-        #self.get_logger().info(f"Current position: lat = {msg.lat}, lon = {msg.lon}")
 
     def calculate_los_setpoints(self):
         """Calculate heading and speed setpoints using LOS algorithm for Position mode."""
@@ -122,66 +112,45 @@ class Guide(Node):
         # Calculate distance and bearing to the target
         distance, bearing = self.calculate_distance_and_bearing(current_lat, current_lon, target_lat, target_lon)
 
-        # Check if the vessel is within the desired distance from the waypoint (5 meters away)
+        # Check if the vessel is within the desired distance from the waypoint
         if distance <= self.waypoint_tolerance:
             self.get_logger().info("Within desired distance from waypoint. Holding position.")
-            desired_speed = 0.0
-            # Optionally, set desired heading to current heading to maintain orientation
-            return bearing, desired_speed
+            return bearing, 0.0
         else:
             # Dynamic speed profile
-            desired_speed = self.calculate_desired_speed(distance - self.waypoint_tolerance)  # Adjust distance
+            desired_speed = self.calculate_desired_speed(distance - self.waypoint_tolerance)
             return bearing, desired_speed
 
     def calculate_track_setpoints(self):
-        """Calculate heading and speed setpoints to follow the route."""
-        if not self.route_received or not self.current_position:
-            self.get_logger().warning("Track Mode: Route or current position not available.")
-            return None, None
-
-        if not self.route or self.current_waypoint_index >= len(self.route):
-            self.get_logger().info("Track Mode: Route completed.")
+        """Calculate heading and speed setpoints for Track mode."""
+        if not self.current_position or self.current_waypoint_index >= len(self.route):
+            self.get_logger().info("Track Mode: Route completed or position unavailable.")
             self.track_completed = True
             return None, None
 
-        # Get the current waypoint
+        # Navigate to the current waypoint
         target_waypoint = self.route[self.current_waypoint_index]
-        self.get_logger().info(f"Track Mode: Navigating to waypoint {self.current_waypoint_index + 1}/{len(self.route)} at lat: {target_waypoint.latitude}, lon: {target_waypoint.longitude}")
-
-        # Calculate distance and bearing to the current waypoint
         current_lat = self.current_position.lat
         current_lon = self.current_position.lon
         target_lat = target_waypoint.latitude
         target_lon = target_waypoint.longitude
 
-        distance, bearing = self.calculate_distance_and_bearing(
-            current_lat, current_lon, target_lat, target_lon)
+        # Calculate distance and bearing
+        distance, bearing = self.calculate_distance_and_bearing(current_lat, current_lon, target_lat, target_lon)
 
-        # Check if we have reached the waypoint
         if distance <= self.waypoint_tolerance:
-            self.get_logger().info(f"Track Mode: Waypoint {self.current_waypoint_index + 1} reached.")
-            self.current_waypoint_index += 1  # Move to next waypoint
-            if self.current_waypoint_index >= len(self.route):
-                self.get_logger().info("Track Mode: Route completed.")
-                self.track_completed = True
-                return None, None
-            else:
-                # Continue to next waypoint
-                target_waypoint = self.route[self.current_waypoint_index]
-                distance, bearing = self.calculate_distance_and_bearing(
-                    current_lat, current_lon, target_waypoint.latitude, target_waypoint.longitude)
-
-        # Calculate desired speed
-        desired_speed = self.calculate_desired_speed(distance)
-        return bearing, desired_speed
+            self.get_logger().info(f"Reached waypoint {self.current_waypoint_index + 1}.")
+            self.current_waypoint_index += 1  # Move to the next waypoint
+            return self.calculate_track_setpoints()  # Recalculate for the next waypoint
+        else:
+            desired_speed = self.calculate_desired_speed(distance)
+            return bearing, desired_speed
 
     def calculate_desired_speed(self, distance):
         """Calculate desired speed based on distance to waypoint."""
         max_speed = 2.0  # Maximum speed in m/s
         min_speed = 0.5  # Minimum speed in m/s
-        # Simple linear reduction of speed when approaching waypoint
-        desired_speed = max(min_speed, min(distance * 0.1, max_speed))
-        return desired_speed
+        return max(min_speed, min(distance * 0.1, max_speed))
 
     def calculate_distance_and_bearing(self, lat1, lon1, lat2, lon2):
         """Calculate distance and bearing from current position to target."""
@@ -191,29 +160,24 @@ class Guide(Node):
         lat2_rad = np.deg2rad(lat2)
         lon2_rad = np.deg2rad(lon2)
 
-        # Calculate differences
+        # Haversine formula
         dlat = lat2_rad - lat1_rad
         dlon = lon2_rad - lon1_rad
-
-        # Haversine formula for distance
-        a = np.sin(dlat/2)**2 + np.cos(lat1_rad) * np.cos(lat2_rad) * np.sin(dlon/2)**2
+        a = np.sin(dlat / 2)**2 + np.cos(lat1_rad) * np.cos(lat2_rad) * np.sin(dlon / 2)**2
         c = 2 * np.arctan2(np.sqrt(a), np.sqrt(1 - a))
-        earth_radius = 6371000  # in meters
-        distance = earth_radius * c
+        distance = 6371000 * c  # Earth's radius in meters
 
-        # Calculate bearing
+        # Bearing calculation
         x = np.sin(dlon) * np.cos(lat2_rad)
-        y = np.cos(lat1_rad) * np.sin(lat2_rad) - (np.sin(lat1_rad) * np.cos(lat2_rad) * np.cos(dlon))
+        y = np.cos(lat1_rad) * np.sin(lat2_rad) - np.sin(lat1_rad) * np.cos(lat2_rad) * np.cos(dlon)
         initial_bearing = np.arctan2(x, y)
-        initial_bearing_deg = (np.rad2deg(initial_bearing) + 360) % 360
-
-        return distance, initial_bearing_deg
+        return distance, (np.rad2deg(initial_bearing) + 360) % 360
 
     def step_control(self):
         """Control loop that runs based on the button mode from HMI."""
         if self.current_mode == 0:  # Standby
-            self.get_logger().info("Standby: Stopping eta and nu setpoints.")
             self.publish_zero_setpoints()
+
 
         elif self.current_mode == 1:  # Position
             # Calculate LOS setpoints and publish them
@@ -232,37 +196,24 @@ class Guide(Node):
 
         elif self.current_mode == 3:  # Track
             if self.track_completed:
-                self.get_logger().info("Track Mode: Route completed. Holding position.")
                 self.publish_zero_setpoints()
+                #feil, skal ha kopi av mode 1
             else:
-                desired_heading, desired_speed = self.calculate_track_setpoints()
-                if desired_heading is not None and desired_speed is not None:
-                    self.publish_setpoints(desired_heading, desired_speed)
-                    self.get_logger().info(f"Track Mode: Publishing setpoints - Heading: {desired_heading:.2f} deg, Speed: {desired_speed:.2f} m/s")
-                else:
-                    self.get_logger().warning("Track Mode: Unable to calculate setpoints due to missing data.")
+                heading, speed = self.calculate_track_setpoints()
+                if heading is not None and speed is not None:
+                    self.publish_setpoints(heading, speed)
 
     def publish_setpoints(self, heading_deg, speed_mps):
-        """Helper method to publish setpoints."""
-        # Create and publish eta_setpoint
         eta_msg = Eta()
-        eta_msg.psi = np.deg2rad(heading_deg)  # Convert to radians
+        eta_msg.psi = np.deg2rad(heading_deg)
         self.eta_setpoint_pub.publish(eta_msg)
 
-        # Create and publish nu_setpoint
         nu_msg = Nu()
-        nu_msg.u = speed_mps  # Assume speed is in m/s
+        nu_msg.u = speed_mps
         self.nu_setpoint_pub.publish(nu_msg)
 
     def publish_zero_setpoints(self):
-        """Helper method to publish zero setpoints."""
-        eta_msg = Eta()
-        eta_msg.psi = 0.0
-        self.eta_setpoint_pub.publish(eta_msg)
-
-        nu_msg = Nu()
-        nu_msg.u = 0.0
-        self.nu_setpoint_pub.publish(nu_msg)
+        self.publish_setpoints(0.0, 0.0)
 
     def load_yaml_file(self, file_path):
         with open(file_path, 'r') as file:
