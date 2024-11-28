@@ -96,7 +96,7 @@ class Guide(Node):
         self.current_waypoint_index = 0  # Index of the current waypoint in the route
 
         # Waypoint tolerance in meters
-        self.waypoint_tolerance = 8.0  # Adjust as needed
+        self.waypoint_tolerance = 5.0  # Adjust as needed
 
         # Start control loop with the same timestep as the simulator
         self.timer = self.create_timer(self.step_size, self.step_control)
@@ -239,7 +239,6 @@ class Guide(Node):
     def step_control(self):
         """Control loop that runs based on the button mode from HMI."""
         if self.current_mode == 0:  # Standby
-            self.publish_zero_setpoints()
             stop_msg = Bool()
             stop_msg.data = True
             self.stop_command_pub.publish(stop_msg)
@@ -275,8 +274,13 @@ class Guide(Node):
             stop_msg.data = False  # Ensure stop command is disabled
             self.stop_command_pub.publish(stop_msg)
             if self.track_completed:
-                self.publish_zero_setpoints()
-                # feil, skal ha kopi av mode 1
+                desired_heading, desired_speed = self.calculate_los_setpoints()
+                if desired_heading is not None and desired_speed is not None:
+                    self.publish_setpoints(desired_heading, desired_speed)
+                else:
+                    self.get_logger().warning(
+                        "Position Mode: Unable to calculate setpoints due to missing data."
+                    )
             else:
                 heading, speed = self.calculate_track_setpoints()
                 if heading is not None and speed is not None:
@@ -290,9 +294,6 @@ class Guide(Node):
         nu_msg = Nu()
         nu_msg.u = speed_mps
         self.nu_setpoint_pub.publish(nu_msg)
-
-    def publish_zero_setpoints(self):
-        self.publish_setpoints(0.0, 0.0)
 
     def load_yaml_file(self, file_path):
         with open(file_path, "r") as file:
