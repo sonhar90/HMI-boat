@@ -75,7 +75,7 @@ class GraphManager:
             self.thruster_1_feedback,
             min_time,
             current_time,
-            "Thruster 1 Setpoint vs Feedback",
+            "Thruster 1 Setpoint vs Feedback (RPM)",
         )
 
         # Update Thruster 2 Graph
@@ -86,7 +86,7 @@ class GraphManager:
             self.thruster_2_feedback,
             min_time,
             current_time,
-            "Thruster 2 Setpoint vs Feedback",
+            "Thruster 2 Setpoint vs Feedback (RPM)",
         )
 
     def update_graph(

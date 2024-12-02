@@ -21,7 +21,9 @@ import sys
 import subprocess
 import time
 import rclpy
+import os
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+import csv
 
 
 class HMIWindow(QMainWindow):
@@ -83,8 +85,8 @@ class HMIWindow(QMainWindow):
         self.grid_layout.addLayout(thruster_buttons_layout, 4, 3, 2, 1)
 
         # Create ThrusterBar widgets
-        max_thrust_forward_value = 30.0  # Adjust according to your system
-        max_thrust_reverse_value = -30.0  # Negative value
+        max_thrust_forward_value = 1100.0  # Adjust according to your system
+        max_thrust_reverse_value = -800.0  # Negative value
 
         self.thruster1_bar = ThrusterBar(
             thruster_id=1,
@@ -100,7 +102,7 @@ class HMIWindow(QMainWindow):
         self.thruster2_bar.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
         # Create SpeedBar widget
-        max_speed_value = 3.5  # Adjust according to your system
+        max_speed_value = 3.0
         self.speed_bar = SpeedBar(
             max_forward_value=max_speed_value, max_reverse_value=-max_speed_value
         )
@@ -199,12 +201,12 @@ class HMIWindow(QMainWindow):
     # Thruster updates
     def update_thruster1_setpoint(self, msg):
         current_time = time.time() - self.graph_manager.start_time
-        self.graph_manager.thruster_1_setpoints.append((current_time, msg.rps))
+        self.graph_manager.thruster_1_setpoints.append((current_time, msg.rps * 60))
         self.graph_manager.thruster_1_setpoints = (
             self.graph_manager.thruster_1_setpoints[-100:]
         )
         self.thruster1_bar.set_values(
-            setpoint=msg.rps,
+            setpoint=msg.rps * 60,
             current_value=(
                 self.graph_manager.thruster_1_feedback[-1][1]
                 if self.graph_manager.thruster_1_feedback
@@ -214,12 +216,12 @@ class HMIWindow(QMainWindow):
 
     def update_thruster2_setpoint(self, msg):
         current_time = time.time() - self.graph_manager.start_time
-        self.graph_manager.thruster_2_setpoints.append((current_time, msg.rps))
+        self.graph_manager.thruster_2_setpoints.append((current_time, msg.rps * 60))
         self.graph_manager.thruster_2_setpoints = (
             self.graph_manager.thruster_2_setpoints[-100:]
         )
         self.thruster2_bar.set_values(
-            setpoint=msg.rps,
+            setpoint=msg.rps * 60,
             current_value=(
                 self.graph_manager.thruster_2_feedback[-1][1]
                 if self.graph_manager.thruster_2_feedback
@@ -229,7 +231,7 @@ class HMIWindow(QMainWindow):
 
     def update_thruster1_feedback(self, msg):
         current_time = time.time() - self.graph_manager.start_time
-        self.graph_manager.thruster_1_feedback.append((current_time, msg.rps))
+        self.graph_manager.thruster_1_feedback.append((current_time, msg.rps * 60))
         self.graph_manager.thruster_1_feedback = self.graph_manager.thruster_1_feedback[
             -100:
         ]
@@ -239,12 +241,12 @@ class HMIWindow(QMainWindow):
                 if self.graph_manager.thruster_1_setpoints
                 else 0
             ),
-            current_value=msg.rps,
+            current_value=msg.rps * 60,
         )
 
     def update_thruster2_feedback(self, msg):
         current_time = time.time() - self.graph_manager.start_time
-        self.graph_manager.thruster_2_feedback.append((current_time, msg.rps))
+        self.graph_manager.thruster_2_feedback.append((current_time, msg.rps * 60))
         self.graph_manager.thruster_2_feedback = self.graph_manager.thruster_2_feedback[
             -100:
         ]
@@ -254,7 +256,7 @@ class HMIWindow(QMainWindow):
                 if self.graph_manager.thruster_2_setpoints
                 else 0
             ),
-            current_value=msg.rps,
+            current_value=msg.rps * 60,
         )
 
     def add_thruster_buttons(self):
@@ -321,7 +323,75 @@ def keep_opencpn_on_top():
     subprocess.run(["wmctrl", "-r", "opencpn", "-b", "add,above"])
 
 
+class Logger:
+    def __init__(self, log_file_path):
+        self.log_file_path = log_file_path
+        log_dir = os.path.dirname(log_file_path)
+        if log_dir:
+            os.makedirs(log_dir, exist_ok=True)
+        log_headers = [
+            "Time",
+            "Heading Feedback",
+            "Thruster1 Setpoint",
+            "Thruster1 Feedback",
+            "Thruster2 Setpoint",
+            "Thruster2 Feedback",
+            "Button Mode",
+        ]
+        with open(log_file_path, mode="w", newline="") as file:
+            writer = csv.writer(file)
+            writer.writerow(log_headers)
+
+    def log_data(self, hmi_window):
+        current_time = time.time() - hmi_window.graph_manager.start_time
+        heading_feedback = (
+            hmi_window.graph_manager.eta_hat_values[-1][1]
+            if hmi_window.graph_manager.eta_hat_values
+            else 0
+        )
+        thruster1_setpoint = (
+            hmi_window.graph_manager.thruster_1_setpoints[-1][1]
+            if hmi_window.graph_manager.thruster_1_setpoints
+            else 0
+        )
+        thruster1_feedback = (
+            hmi_window.graph_manager.thruster_1_feedback[-1][1]
+            if hmi_window.graph_manager.thruster_1_feedback
+            else 0
+        )
+        thruster2_setpoint = (
+            hmi_window.graph_manager.thruster_2_setpoints[-1][1]
+            if hmi_window.graph_manager.thruster_2_setpoints
+            else 0
+        )
+        thruster2_feedback = (
+            hmi_window.graph_manager.thruster_2_feedback[-1][1]
+            if hmi_window.graph_manager.thruster_2_feedback
+            else 0
+        )
+        button_mode = hmi_window.ros_node.current_button_mode
+
+        log_data = [
+            current_time,
+            heading_feedback,
+            thruster1_setpoint,
+            thruster1_feedback,
+            thruster2_setpoint,
+            thruster2_feedback,
+            button_mode,
+        ]
+        self.log_to_csv(log_data)
+
+    def log_to_csv(self, log_data):
+        with open(self.log_file_path, mode="a", newline="") as file:
+            writer = csv.writer(file)
+            writer.writerow(log_data)
+
+
 def main():
+    log_file_path = "sim_log.csv"
+    logger = Logger(log_file_path)
+
     rclpy.init()
     app = QApplication(sys.argv)
     hmi_window = HMIWindow()
@@ -342,6 +412,11 @@ def main():
     opencpn_timer = QTimer()
     opencpn_timer.timeout.connect(keep_opencpn_on_top)
     opencpn_timer.start(1000)  # Check every 1 second
+
+    # Timer to log data to CSV
+    log_timer = QTimer()
+    log_timer.timeout.connect(lambda: logger.log_data(hmi_window))
+    log_timer.start(100)  # Log every 1/10 second
 
     # Spin the ROS node from HMIWindow's ROSNode instance
     ros_timer = QTimer()

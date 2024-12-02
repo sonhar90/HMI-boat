@@ -206,7 +206,10 @@ class Guide(Node):
 
     def calculate_desired_speed(self, distance):
         """Calculate desired speed based on distance to waypoint."""
-        max_speed = 0.5  # Maximum speed in m/s
+        if self.nu_setpoint is None or self.nu_setpoint.u < 1:
+            max_speed = 0.5  # Default maximum speed in m/s
+        else:
+            max_speed = self.nu_setpoint.u  # Maximum speed in m/s
         min_speed = 0.1  # Minimum speed in m/s
         return max(min_speed, min(distance * 0.1, max_speed))
 

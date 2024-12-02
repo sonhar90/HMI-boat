@@ -55,6 +55,7 @@ class ROSNode(Node):
         # Initialize variables to store data
         self.heading_setpoint = 0.0
         self.surge_setpoint = 0.0
+        self.current_button_mode = None  # Add this line
 
         # Callbacks to be set by HMIWindow
         self.on_eta_received = None
@@ -101,6 +102,7 @@ class ROSNode(Node):
         self.nu_publisher_HMI.publish(nu_msg)
 
     def publish_button_mode(self, mode):
+        self.current_button_mode = mode  # Update current button mode
         button_msg = ButtonControl()
         button_msg.mode = mode
         self.button_publisher.publish(button_msg)
