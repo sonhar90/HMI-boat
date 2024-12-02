@@ -21,10 +21,6 @@ class CompassWidget(QWidget):
         otter_image_path = os.path.join(package_share_directory, "images", "otter.png")
         arrow_image_path = os.path.join(package_share_directory, "images", "arrow.png")
 
-        print(f"Compass image path: {compass_image_path}")
-        print(f"Otter image path: {otter_image_path}")
-        print(f"Arrow image path: {arrow_image_path}")
-
         # Load the compass background image
         self.compass_pixmap = QPixmap(compass_image_path)
         if self.compass_pixmap.isNull():
@@ -46,7 +42,7 @@ class CompassWidget(QWidget):
         # Timer for updating the feedback (optional)
         self.timer = QTimer()
         self.timer.timeout.connect(self.set_feedback)
-        self.timer.start(100)  # Update every 100 ms
+        self.timer.start(10)  # Update every 10 ms
 
     def set_setpoint(self, value):
         self.setpoint = value

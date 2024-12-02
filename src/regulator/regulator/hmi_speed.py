@@ -3,16 +3,15 @@ from PyQt5.QtGui import QPainter, QPen, QColor
 from PyQt5.QtWidgets import QFrame, QSizePolicy
 
 
-class ThrusterBar(QFrame):
-    def __init__(self, thruster_id, max_forward_value, max_reverse_value, parent=None):
+class SpeedBar(QFrame):
+    def __init__(self, max_forward_value, max_reverse_value, parent=None):
         super().__init__(parent)
-        self.thruster_id = thruster_id
         self.max_forward_value = max_forward_value  # Maximum positive value
         self.max_reverse_value = (
             max_reverse_value  # Maximum negative value (negative number)
         )
         self.setpoint = 0.0  # Setpoint value
-        self.current_value = 0.0  # Current value
+        self.nu = 0.0  # Feedback value
         self.opacity_level = 0.9  # Default opacity
         self.init_ui()
 
@@ -22,10 +21,13 @@ class ThrusterBar(QFrame):
         self.setFrameStyle(QFrame.Panel | QFrame.Sunken)
         self.setStyleSheet("background-color: #1E1E1E;")  # Match overall theme
 
-    def set_values(self, setpoint, current_value):
+    def set_setpoint(self, setpoint):
         self.setpoint = setpoint
-        self.current_value = current_value
         self.update()  # Trigger repaint
+
+    def set_nu(self, nu):
+        self.nu = nu
+        self.update()
 
     def paintEvent(self, event):
         painter = QPainter(self)
@@ -55,17 +57,17 @@ class ThrusterBar(QFrame):
             int(rect.left()), int(center_y), int(rect.right()), int(center_y)
         )
 
-        # Calculate current thrust percentage and bar length
-        if self.current_value >= 0:
-            thrust_percentage = self.current_value / self.max_forward_value
-            bar_length = (height / 2) * thrust_percentage
-            # Draw forward thrust bar (upwards)
+        # Calculate current speed percentage and bar length
+        if self.nu >= 0:
+            speed_percentage = self.nu / self.max_forward_value
+            bar_length = (height / 2) * speed_percentage
+            # Draw forward speed bar (upwards)
             rect_bar = QRectF(rect.left(), center_y - bar_length, width, bar_length)
             painter.fillRect(rect_bar, QColor("green"))
         else:
-            thrust_percentage = abs(self.current_value) / abs(self.max_reverse_value)
-            bar_length = (height / 2) * thrust_percentage
-            # Draw reverse thrust bar (downwards)
+            speed_percentage = abs(self.nu) / abs(self.max_reverse_value)
+            bar_length = (height / 2) * speed_percentage
+            # Draw reverse speed bar (downwards)
             rect_bar = QRectF(rect.left(), center_y, width, bar_length)
             painter.fillRect(rect_bar, QColor("red"))
 
@@ -92,16 +94,12 @@ class ThrusterBar(QFrame):
         painter.setPen(pen)
         painter.drawRect(rect)
 
-        # Draw thruster ID at the top
+        # Draw name at the top
         painter.setPen(QPen(Qt.black))
-        painter.drawText(
-            rect, Qt.AlignTop | Qt.AlignHCenter, f"Thruster {self.thruster_id}"
-        )
+        painter.drawText(rect, Qt.AlignTop | Qt.AlignHCenter, "Speed")
 
         # Draw current value at the bottom
-        painter.drawText(
-            rect, Qt.AlignBottom | Qt.AlignHCenter, f"{self.current_value:.2f}"
-        )
+        painter.drawText(rect, Qt.AlignBottom | Qt.AlignHCenter, f"{self.nu:.2f}")
 
         painter.end()
 
